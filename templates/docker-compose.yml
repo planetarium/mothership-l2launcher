@@ -1,0 +1,27 @@
+version: '3.8'
+services:
+  op-geth:
+    container_name: op-geth
+    ports:
+      - 8545:8545/tcp
+    build:
+      context: .
+      target: op-geth
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8545"]
+      start_interval: 1s
+  op-node:
+    container_name: op-node
+    build:
+      context: .
+      target: op-node
+  op-batcher:
+    container_name: op-batcher
+    build:
+      context: .
+      target: op-batcher
+  op-proposer:
+    container_name: op-proposer
+    build:
+      context: .
+      target: op-proposer

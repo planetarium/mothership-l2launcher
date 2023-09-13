@@ -1,0 +1,15 @@
+{
+  "tasks": {
+    "start": "deno run --allow-read=./ --allow-write=./ --allow-run=docker main.ts"
+  },
+  "imports": {
+    "std/": "https://deno.land/std@0.201.0/",
+    "cliffy/": "https://deno.land/x/cliffy@v1.0.0-rc.3/",
+    "hextools": "https://deno.land/x/hextools@v1.0.0/mod.ts",
+    "secp256k1": "https://deno.land/x/secp256k1@2.0.0/mod.ts"
+  },
+  "lock": false,
+  "fmt": {
+    "lineWidth": 100
+  }
+}
