@@ -3,8 +3,7 @@ version: '3.8'
 services:
   genesis:
     container_name: genesis
-    build:
-      context: .
+    image: "ghcr.io/planetarium/mothership-l2launcher-genesis-deployer:latest"
     environment:
       - ADMIN_KEY=${ADMIN_KEY}
       - PROPOSER_KEY=${PROPOSER_KEY}

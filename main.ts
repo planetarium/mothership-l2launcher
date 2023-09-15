@@ -52,9 +52,7 @@ if (
     await Input.prompt({ message: "Bundler private key:" });
 }
 await Deno.writeTextFile("out/docker-compose.yml", dockerComposeYml);
-await Deno.copyFile("templates/Dockerfile", "out/Dockerfile");
-await Deno.copyFile("templates/deploy.sh", "out/deploy.sh");
-console.log("out/docker-compose.yml, out/Dockerfile, out/deploy.sh copied.");
+console.log("out/docker-compose.yml copied.");
 
 const dotenv = Object.entries(env)
   .filter(([k]) => envKeys.includes(k as typeof envKeys[number]))
