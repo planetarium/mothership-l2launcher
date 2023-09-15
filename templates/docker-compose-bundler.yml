@@ -7,4 +7,4 @@
         condition: service_healthy
     environment:
       ERC4337_BUNDLER_ETH_CLIENT_URL: http://op-geth:8545
-      ERC4337_BUNDLER_PRIVATE_KEY: {{ERC4337_BUNDLER_PRIVATE_KEY}}
+      ERC4337_BUNDLER_PRIVATE_KEY: ${ERC4337_BUNDLER_KEY}

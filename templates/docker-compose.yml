@@ -1,27 +1,146 @@
 version: '3.8'
+
 services:
+  genesis:
+    container_name: genesis
+    build:
+      context: .
+    environment:
+      - ADMIN_KEY=${ADMIN_KEY}
+      - PROPOSER_KEY=${PROPOSER_KEY}
+      - BATCHER_KEY=${BATCHER_KEY}
+      - SEQUENCER_KEY=${SEQUENCER_KEY}
+      - L1_RPC=${L1_RPC}
+    volumes:
+      - ./data/genesis:/data
+
+  op-geth-init:
+    container_name: op-geth-init
+    image: "us-docker.pkg.dev/oplabs-tools-artifacts/images/op-geth:v1.101200.1"
+    depends_on:
+      genesis:
+        condition: service_completed_successfully
+    volumes:
+      - ./data/op-geth:/data
+      - ./data/genesis:/genesis
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        test -e /data/geth/chaindata/CURRENT && exit 0
+        geth init --datadir=/data /genesis/genesis.json
+
   op-geth:
     container_name: op-geth
+    image: "us-docker.pkg.dev/oplabs-tools-artifacts/images/op-geth:v1.101200.1"
+    volumes:
+      - ./data/op-geth:/data
+      - ./data/genesis:/genesis
     ports:
-      - 8545:8545/tcp
-    build:
-      context: .
-      target: op-geth
+      - 8545:8545
+      - 8546:8546
+      - 8551:8551
+    depends_on:
+      op-geth-init:
+        condition: service_completed_successfully
+    command:
+      - --datadir=/data
+      - --http
+      - --http.corsdomain=*
+      - --http.vhosts=*
+      - --http.addr=0.0.0.0
+      - --http.api=web3,debug,eth,txpool,net,engine
+      - --ws
+      - --ws.addr=0.0.0.0
+      - --ws.port=8546
+      - --ws.origins=*
+      - --ws.api=debug,eth,txpool,net,engine
+      - --syncmode=full
+      - --gcmode=archive
+      - --nodiscover
+      - --maxpeers=0
+      - --authrpc.vhosts=*
+      - --authrpc.addr=0.0.0.0
+      - --authrpc.port=8551
+      - --authrpc.jwtsecret=/genesis/jwt.txt
+      - --rollup.disabletxpoolgossip=true
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8545"]
+      test: ["CMD", "nc", "-z", "localhost", "8545"]
       start_interval: 1s
+
   op-node:
     container_name: op-node
-    build:
-      context: .
-      target: op-node
+    image: "us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:v1.1.4"
+    volumes:
+      - ./data/op-node:/data
+      - ./data/genesis:/genesis    
+    depends_on:
+      op-geth:
+        condition: service_healthy
+    environment:
+      - SEQUENCER_KEY=${SEQUENCER_KEY}
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        op-node \
+          --l2=http://op-geth:8551 \
+          --l2.jwt-secret=/genesis/jwt.txt \
+          --sequencer.enabled \
+          --sequencer.l1-confs=3 \
+          --verifier.l1-confs=3 \
+          --rollup.config=/genesis/rollup.json \
+          --rpc.addr=0.0.0.0 \
+          --rpc.port=8547 \
+          --p2p.disable \
+          --rpc.enable-admin \
+          --p2p.sequencer.key=$${SEQUENCER_KEY#0x} \
+          --l1=${L1_RPC} \
+          --l1.rpckind=any \
+          --log.level=debug
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "8547"]
+      start_interval: 1s
+
   op-batcher:
     container_name: op-batcher
-    build:
-      context: .
-      target: op-batcher
+    image: "us-docker.pkg.dev/oplabs-tools-artifacts/images/op-batcher:v1.1.4"
+    depends_on:
+      op-node:
+        condition: service_healthy
+    environment:
+      - L1_RPC=${L1_RPC}
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        op-batcher \
+          --l1-eth-rpc=$${L1_RPC} \
+          --l2-eth-rpc=http://op-geth:8545 \
+          --rollup-rpc=http://op-node:8547 \
+          --poll-interval=1s \
+          --sub-safety-margin=6 \
+          --num-confirmations=1 \
+          --safe-abort-nonce-too-low-count=3 \
+          --resubmission-timeout=30s \
+          --rpc.addr=0.0.0.0 \
+          --rpc.port=8548 \
+          --rpc.enable-admin \
+          --max-channel-duration=1 \
+          --private-key=${BATCHER_KEY}
+
   op-proposer:
     container_name: op-proposer
-    build:
-      context: .
-      target: op-proposer
+    image: "us-docker.pkg.dev/oplabs-tools-artifacts/images/op-proposer:v1.1.4"
+    volumes:
+      - ./data/genesis:/genesis
+    depends_on:
+      op-node:
+        condition: service_healthy
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        op-proposer \
+          --poll-interval=12s \
+          --rpc.port=8560 \
+          --rollup-rpc=http://op-node:8547 \
+          --l2oo-address=$$(cat /genesis/L2OutputOracleProxyAddress) \
+          --private-key=${PROPOSER_KEY} \
+          --l1-eth-rpc=${L1_RPC}
