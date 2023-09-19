@@ -1,6 +1,6 @@
 {
   "tasks": {
-    "start": "deno run --allow-read=./ --allow-write=./ --allow-run=docker main.ts"
+    "start": "deno run --allow-read=./ --allow-write=./ --allow-run=docker cli.ts"
   },
   "imports": {
     "std/": "https://deno.land/std@0.201.0/",

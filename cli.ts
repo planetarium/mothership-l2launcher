@@ -65,6 +65,12 @@ if (
   await Confirm.prompt({
     message: "Run docker compose now? (docker compose up -d)",
     default: true,
+  }) &&
+  await Confirm.prompt({
+    message:
+      "Please ensure the Admin, Proposer, Batcher, and Sequencer accounts are funded to continue.\n"
+      + "Recommended funding amounts: Admin - 2 ETH, Proposer - 5 ETH, Batcher - 10 ETH\n"
+      + "(Reference: https://stack.optimism.io/docs/build/getting-started/#generate-some-keys)",
   })
 ) {
   await new Deno.Command("docker", {
