@@ -1,10 +1,18 @@
 #!/usr/bin/env -S deno run --allow-read=./ --allow-write=./ --allow-run=docker
 
+import { crypto } from "std/crypto/mod.ts";
 import { load as loadDotenv } from "std/dotenv/mod.ts";
 import { join as joinPath } from "std/path/mod.ts";
+
 import { Confirm, Input } from "cliffy/prompt/mod.ts";
 import { bufferToHex } from "hextools";
-import { utils as secp256k1Utils } from "secp256k1";
+import { getPublicKey, utils as secp256k1Utils } from "secp256k1";
+
+const getAddressFromPrivateKey = async (key: string | Uint8Array) => {
+  const pub = getPublicKey(typeof key === "string" ? key.replace("0x", "") : key, false);
+  const hashed = await crypto.subtle.digest("KECCAK-256", pub.slice(1));
+  return "0x" + bufferToHex(hashed.slice(-20));
+};
 
 await Deno.mkdir("out", { recursive: true });
 
@@ -20,7 +28,7 @@ const envKeys = [
 const env = {
   ...await loadDotenv({ allowEmptyValues: true }),
   ...Deno.env,
-} as unknown as Record<typeof envKeys[number], string>;
+} as unknown as Partial<Record<typeof envKeys[number], string>>;
 
 if (!(env.ADMIN_KEY && env.PROPOSER_KEY && env.BATCHER_KEY && env.SEQUENCER_KEY)) {
   if (
@@ -38,8 +46,17 @@ if (!(env.ADMIN_KEY && env.PROPOSER_KEY && env.BATCHER_KEY && env.SEQUENCER_KEY)
     env.PROPOSER_KEY = env.PROPOSER_KEY || "0x" + bufferToHex(secp256k1Utils.randomPrivateKey());
     env.BATCHER_KEY = env.BATCHER_KEY || "0x" + bufferToHex(secp256k1Utils.randomPrivateKey());
     env.SEQUENCER_KEY = env.SEQUENCER_KEY || "0x" + bufferToHex(secp256k1Utils.randomPrivateKey());
+    console.log("Generated random keys.");
   }
 }
+
+console.log("Account addresses:");
+await Promise.all([
+  ["Admin", env.ADMIN_KEY],
+  ["Proposer", env.PROPOSER_KEY],
+  ["Batcher", env.BATCHER_KEY],
+  ["Sequencer", env.SEQUENCER_KEY],
+].map(async ([name, key]) => console.log(`  ${name}:`, await getAddressFromPrivateKey(key))));
 
 env.L1_RPC = env.L1_RPC || await Input.prompt({ message: "RPC address to L1 chain:" });
 
@@ -68,9 +85,9 @@ if (
   }) &&
   await Confirm.prompt({
     message:
-      "Please ensure the Admin, Proposer, Batcher, and Sequencer accounts are funded to continue.\n"
-      + "Recommended funding amounts: Admin - 2 ETH, Proposer - 5 ETH, Batcher - 10 ETH\n"
-      + "(Reference: https://stack.optimism.io/docs/build/getting-started/#generate-some-keys)",
+      "Please ensure the Admin, Proposer, Batcher, and Sequencer accounts are funded to continue.\n" +
+      "Recommended funding amounts: Admin - 2 ETH, Proposer - 5 ETH, Batcher - 10 ETH\n" +
+      "(Reference: https://stack.optimism.io/docs/build/getting-started/#generate-some-keys)",
   })
 ) {
   await new Deno.Command("docker", {
