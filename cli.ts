@@ -2,9 +2,10 @@
 
 import { crypto } from "std/crypto/mod.ts";
 import { load as loadDotenv } from "std/dotenv/mod.ts";
+import { copy } from "std/fs/mod.ts";
 import { join as joinPath } from "std/path/mod.ts";
 
-import { Confirm, Input } from "cliffy/prompt/mod.ts";
+import { Confirm, type ConfirmOptions, Input } from "cliffy/prompt/mod.ts";
 import { bufferToHex } from "hextools";
 import { getPublicKey, utils as secp256k1Utils } from "secp256k1";
 
@@ -13,6 +14,8 @@ const getAddressFromPrivateKey = async (key: string | Uint8Array) => {
   const hashed = await crypto.subtle.digest("KECCAK-256", pub.slice(1));
   return "0x" + bufferToHex(hashed.slice(-20));
 };
+
+const confirmOptions: Partial<ConfirmOptions> = { active: "y", inactive: "n" };
 
 await Deno.mkdir("out", { recursive: true });
 
@@ -34,6 +37,7 @@ if (!(env.ADMIN_KEY && env.PROPOSER_KEY && env.BATCHER_KEY && env.SEQUENCER_KEY)
   if (
     await Confirm.prompt({
       message: "Do you have Admin, Proposer, Batcher, and Sequencer accounts?",
+      ...confirmOptions,
     })
   ) {
     const msg = "account's private key:";
@@ -61,13 +65,39 @@ await Promise.all([
 env.L1_RPC = env.L1_RPC || await Input.prompt({ message: "RPC address to L1 chain:" });
 
 let dockerComposeYml = await Deno.readTextFile("templates/docker-compose.yml");
+
 if (
-  await Confirm.prompt({ message: "Add stackup bundler to docker-compose.yml?", default: true })
+  await Confirm.prompt({ message: "Add stackup bundler to docker-compose.yml?", ...confirmOptions })
 ) {
-  dockerComposeYml += await Deno.readTextFile("templates/docker-compose-bundler.yml");
-  env.ERC4337_BUNDLER_KEY = env.ERC4337_BUNDLER_KEY ||
-    await Input.prompt({ message: "Bundler private key:" });
+  dockerComposeYml += "\n" + await Deno.readTextFile("templates/docker-compose-bundler.yml");
+  if (!env.ERC4337_BUNDLER_KEY) {
+    if (
+      await Confirm.prompt({
+        message: "Do you have ERC-4337 bundler private key?",
+        ...confirmOptions,
+      })
+    ) {
+      env.ERC4337_BUNDLER_KEY = await Input.prompt({ message: "Bundler private key:" });
+    } else {
+      env.ERC4337_BUNDLER_KEY = "0x" + bufferToHex(secp256k1Utils.randomPrivateKey());
+      console.log("Generated a random bundler private key.");
+    }
+  }
 }
+
+if (
+  await Confirm.prompt({
+    message: "Add blockscout explorer to docker-compose.yml?",
+    ...confirmOptions,
+  })
+) {
+  dockerComposeYml += "\n" + await Deno.readTextFile("templates/docker-compose-blockscout.yml");
+  await Promise.all([
+    copy("templates/services", "out/services", { overwrite: true }),
+    copy("templates/envs", "out/envs", { overwrite: true }),
+  ]);
+}
+
 await Deno.writeTextFile("out/docker-compose.yml", dockerComposeYml);
 console.log("out/docker-compose.yml copied.");
 
@@ -81,13 +111,14 @@ console.log("out/.env generated with given account private keys and L1 RPC.");
 if (
   await Confirm.prompt({
     message: "Run docker compose now? (docker compose up -d)",
-    default: true,
+    ...confirmOptions,
   }) &&
   await Confirm.prompt({
     message:
       "Please ensure the Admin, Proposer, Batcher, and Sequencer accounts are funded to continue.\n" +
       "Recommended funding amounts: Admin - 2 ETH, Proposer - 5 ETH, Batcher - 10 ETH\n" +
       "(Reference: https://stack.optimism.io/docs/build/getting-started/#generate-some-keys)",
+    ...confirmOptions,
   })
 ) {
   await new Deno.Command("docker", {

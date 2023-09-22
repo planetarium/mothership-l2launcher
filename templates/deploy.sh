@@ -6,6 +6,9 @@ test -e /data/genesis.json && exit 0
 mkdir -p /data
 openssl rand -hex 32 > /data/jwt.txt
 
+echo "nameserver 1.1.1.1" >> /etc/resolv.conf
+echo "nameserver 8.8.8.8" >> /etc/resolv.conf
+
 cast block finalized --json --rpc-url ${L1_RPC} > l1_finalized
 export blockHash="$(cat l1_finalized | jq -r .hash)"
 export timestamp="$(printf %d $(cat l1_finalized | jq -r .timestamp))"

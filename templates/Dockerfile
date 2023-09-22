@@ -2,12 +2,13 @@ ARG OPTIMISM_VERSION=v1.1.4
 
 FROM us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:${OPTIMISM_VERSION} as op-node
 
-FROM --platform=linux/amd64 frolvlad/alpine-glibc:alpine-3.17 as optimism-genesis-deployer
+FROM frolvlad/alpine-glibc:alpine-3.17 as optimism-genesis-deployer
+
 COPY --from=op-node /usr/local/bin/op-node /usr/local/bin
 COPY --from=ghcr.io/foundry-rs/foundry:latest /usr/local/bin /usr/local/bin
 ARG OPTIMISM_VERSION
 
-RUN apk add git bash jq nodejs-current openssl \
+RUN apk add --no-cache git bash jq nodejs-current openssl \
     && corepack enable \
     && git clone https://github.com/ethereum-optimism/optimism.git /optimism \
         -b ${OPTIMISM_VERSION} --no-checkout --depth=1 \
