@@ -25,6 +25,7 @@ const envKeys = [
   "BATCHER_KEY",
   "SEQUENCER_KEY",
   "L1_RPC",
+  "L2_CHAIN_ID",
   "ERC4337_BUNDLER_KEY",
 ] as const;
 
@@ -63,6 +64,8 @@ await Promise.all([
 ].map(async ([name, key]) => console.log(`  ${name}:`, await getAddressFromPrivateKey(key))));
 
 env.L1_RPC = env.L1_RPC || await Input.prompt({ message: "RPC address to L1 chain:" });
+
+env.L2_CHAIN_ID = env.L2_CHAIN_ID || await Input.prompt({ message: "Chain ID for new L2 chain:" });
 
 let dockerComposeYml = await Deno.readTextFile("templates/docker-compose.yml");
 

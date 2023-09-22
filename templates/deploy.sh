@@ -24,9 +24,12 @@ cat deploy-config/${DEPLOYMENT_CONTEXT}.json \
   | sed "s/PROPOSER/$(cast wallet address --private-key ${PROPOSER_KEY})/" \
   | sed "s/BATCHER/$(cast wallet address --private-key ${BATCHER_KEY})/" \
   | sed "s/SEQUENCER/$(cast wallet address --private-key ${SEQUENCER_KEY})/" \
-  | sed "s/BLOCKHASH/$blockHash/" \
   | sed "s/\"\\?TIMESTAMP\"\\?/\"TIMESTAMP\"/" \
-  | jq -r ".l1ChainID=$(printf %d $chainId) | .l2OutputOracleStartingTimestamp=$timestamp | .l1BlockTime=12" \
+  | jq ".l1BlockTime=12" \
+  | jq ".l1StartingBlockTag=\"${blockHash}\"" \
+  | jq ".l1ChainID=$(printf %d ${chainId})" \
+  | jq ".l2ChainID=$(printf %d ${L2_CHAIN_ID})" \
+  | jq ".l2OutputOracleStartingTimestamp=${timestamp}" \
   > deploy-config/${DEPLOYMENT_CONTEXT}.json.new
 mv deploy-config/${DEPLOYMENT_CONTEXT}.json.new deploy-config/${DEPLOYMENT_CONTEXT}.json
 
