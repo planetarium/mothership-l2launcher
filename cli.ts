@@ -70,7 +70,7 @@ env.L2_CHAIN_ID = env.L2_CHAIN_ID || await Input.prompt({ message: "Chain ID for
 let dockerComposeYml = await Deno.readTextFile("templates/docker-compose.yml");
 
 if (
-  await Confirm.prompt({ message: "Add stackup bundler to docker-compose.yml?", ...confirmOptions })
+  await Confirm.prompt({ message: "Add Skandha bundler to docker-compose.yml?", ...confirmOptions })
 ) {
   dockerComposeYml += "\n" + await Deno.readTextFile("templates/docker-compose-bundler.yml");
   if (!env.ERC4337_BUNDLER_KEY) {
@@ -83,7 +83,8 @@ if (
       env.ERC4337_BUNDLER_KEY = await Input.prompt({ message: "Bundler private key:" });
     } else {
       env.ERC4337_BUNDLER_KEY = "0x" + bufferToHex(secp256k1Utils.randomPrivateKey());
-      console.log("Generated a random bundler private key.");
+      console.log("Generated a random bundler account.");
+      console.log("  Bundler:", await getAddressFromPrivateKey(env.ERC4337_BUNDLER_KEY));
     }
   }
 }
@@ -108,7 +109,7 @@ const dotenv = Object.entries(env)
   .filter(([k]) => envKeys.includes(k as typeof envKeys[number]))
   .map(([k, v]) => `${k}=${v}`)
   .join("\n");
-await Deno.writeTextFile("out/.env", dotenv);
+await Deno.writeTextFile("out/.env", dotenv + "\n");
 console.log("out/.env generated with given account private keys and L1 RPC.");
 
 if (

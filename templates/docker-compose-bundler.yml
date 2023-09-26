@@ -1,9 +1,16 @@
-  stackup-bundler:
-    container_name: stackup-bundler
-    image: "ghcr.io/longfin/stackup-bundler:v0.6.14"
+  skandha-bundler:
+    container_name: skandha-bundler
+    image: etherspot/skandha
+    ports:
+      - 14337:14337
     depends_on:
       op-geth:
         condition: service_healthy
     environment:
-      ERC4337_BUNDLER_ETH_CLIENT_URL: http://op-geth:8545
-      ERC4337_BUNDLER_PRIVATE_KEY: ${ERC4337_BUNDLER_KEY}
+      SKANDHA_NETWORKS: dev
+      SKANDHA_DEV_RPC: http://op-geth:8545
+      SKANDHA_DEV_ENTRYPOINTS: ${ERC4337_ENTRYPOINT:-0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789}
+      SKANDHA_DEV_RELAYER: ${ERC4337_BUNDLER_KEY}
+    command:
+      - standalone
+      - --redirectRpc

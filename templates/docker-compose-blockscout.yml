@@ -14,7 +14,7 @@
       - smart-contract-verifier
       - redis
       - op-geth
-    image: blockscout/blockscout:${DOCKER_TAG:-latest}
+    image: blockscout/blockscout:latest
     pull_policy: always
     restart: always
     stop_grace_period: 5m
@@ -23,13 +23,14 @@
     env_file:
       -  ./envs/common-blockscout.env
     environment:
-        ETHEREUM_JSONRPC_VARIANT: 'geth'
-        ETHEREUM_JSONRPC_HTTP_URL: http://op-geth:8545/
-        ETHEREUM_JSONRPC_TRACE_URL: http://op-geth:8545/
-        DATABASE_URL: postgresql://postgres:@postgres:5432/blockscout?ssl=false
-        ECTO_USE_SSL: 'false'
-        SECRET_KEY_BASE: '56NtB48ear7+wMSf0IQuWDAAazhpb31qyc7GiyspBP2vh7t5zlCsF5QDv76chXeN'
-        MIX_ENV: 'prod'
+      CHAIN_ID: ${L2_CHAIN_ID}
+      ETHEREUM_JSONRPC_VARIANT: 'geth'
+      ETHEREUM_JSONRPC_HTTP_URL: http://op-geth:8545/
+      ETHEREUM_JSONRPC_TRACE_URL: http://op-geth:8545/
+      DATABASE_URL: postgresql://postgres:@postgres:5432/blockscout?ssl=false
+      ECTO_USE_SSL: 'false'
+      SECRET_KEY_BASE: '56NtB48ear7+wMSf0IQuWDAAazhpb31qyc7GiyspBP2vh7t5zlCsF5QDv76chXeN'
+      MIX_ENV: 'prod'
     ports:
       - 4000:4000
     volumes:
