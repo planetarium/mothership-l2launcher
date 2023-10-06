@@ -10,7 +10,7 @@ import { bufferToHex } from "hextools";
 import { getPublicKey, utils as secp256k1Utils } from "secp256k1";
 import { createPublicClient, type Hex, http } from "viem";
 
-import { type Account, ETHER_WEI_UNIT, fundAccounts } from "./fundAccounts.ts";
+import { type Account, ETHER_WEI_UNIT, listAndFundAccounts } from "./fundAccounts.ts";
 
 const generatePrivateKey = () => "0x" + bufferToHex(secp256k1Utils.randomPrivateKey()) as Hex;
 
@@ -117,20 +117,16 @@ const accounts: Account[] = await Promise.all(([
   ...(env.ERC4337_BUNDLER_KEY ? [["Bundler", env.ERC4337_BUNDLER_KEY, 1n] as const] : []),
 ] as const).map(async ([name, privateKey, recommendedBalance]) => {
   const address = await getAddressFromPrivateKey(privateKey);
-  const balance = await l1RpcClient.getBalance({ address });
 
   return {
     name,
     address,
-    balance,
+    balance: await l1RpcClient.getBalance({ address }),
     recommendedBalance: recommendedBalance * ETHER_WEI_UNIT,
   };
 }));
 
-console.log("Account addresses:");
-console.log(accounts.map(({ name, address }) => `  ${name}: ${address}`).join("\n"));
-
-await fundAccounts(accounts, env);
+await listAndFundAccounts(accounts, env);
 
 if (
   await Confirm.prompt({
