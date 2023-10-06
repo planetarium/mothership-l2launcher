@@ -60,7 +60,7 @@ export const listAndFundAccounts = async (accounts: Account[], env: Record<strin
   const publicClient = createPublicClient({ transport: http(env.L1_RPC) });
 
   if (opt === "auto") {
-    const adminAccount = { ...accounts[0] };
+    const adminAccount = { ...accounts.find((account) => account.name === "Admin") as Account };
     const requiredAmount = balanceWarningAccounts.reduce(
       (prev, curr) => prev + curr.recommendedBalance - curr.balance,
       0n,
@@ -82,7 +82,7 @@ export const listAndFundAccounts = async (accounts: Account[], env: Record<strin
       chain: { id: await publicClient.getChainId() } as Chain,
     });
 
-    const spinner = new Kia("Sending transactions...").start();
+    const spinner = new Kia("Distributing funds...").start();
     for await (const account of balanceWarningAccounts) {
       await walletClient.sendTransaction({
         to: account.address,
@@ -93,7 +93,7 @@ export const listAndFundAccounts = async (accounts: Account[], env: Record<strin
   }
 
   await waitForTransfer(balanceWarningAccounts, publicClient);
-  console.log("All accounts are funded enough!");
+  console.log("All accounts are sufficiently funded!");
 };
 
 const waitForTransfer = async (accounts: Account[], publicClient: PublicClient) => {
