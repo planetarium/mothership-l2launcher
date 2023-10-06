@@ -50,11 +50,12 @@ export const fundAccounts = async (accounts: Account[], env: Record<string, stri
       const publicClient = createPublicClient({ transport: http(env.L1_RPC) });
 
       if (opt === "auto") {
+        const adminBalance = accounts[0].balance;
         const requiredAmount = balanceWarningAccounts.reduce(
           (prev, curr) => prev + curr.recommendedBalance - curr.balance,
           0n,
         );
-        const requiredBalance = requiredAmount + accounts[0].balance;
+        const requiredBalance = requiredAmount + adminBalance;
 
         console.log(
           `Send ${formatEther(requiredAmount)} L1 native token to Admin account: ${
@@ -62,13 +63,14 @@ export const fundAccounts = async (accounts: Account[], env: Record<string, stri
           }`,
         );
         const spinner = new Kia("Waiting for transfer...").start();
-        let prevBalance;
+        let prevBalance = adminBalance;
         do {
           const balance = await publicClient.getBalance({ address: accounts[0].address });
-          if (balance !== prevBalance && prevBalance) {
+          if (balance !== prevBalance) {
             const msg = `Admin account balance change detected: ${formatEther(balance)}`;
             if (balance >= requiredBalance) {
               spinner.succeed(msg);
+              accounts[0].balance = balance;
             } else {
               spinner.warn(msg + ` (need ${formatEther(requiredBalance - balance)} more)`).start();
             }
@@ -83,14 +85,14 @@ export const fundAccounts = async (accounts: Account[], env: Record<string, stri
           chain: { id: await publicClient.getChainId() } as Chain,
         });
 
-        await Promise.all(
-          balanceWarningAccounts.map(({ address, balance, recommendedBalance }) =>
-            walletClient.sendTransaction({
-              to: address,
-              value: recommendedBalance - balance,
-            })
-          ),
-        );
+        spinner.start("Sending transactions...");
+        for await (const account of balanceWarningAccounts.slice(1, undefined)) {
+          await walletClient.sendTransaction({
+            to: account.address,
+            value: account.recommendedBalance - account.balance,
+          });
+        }
+        spinner.succeed();
       }
 
       const spinner = new Kia("Waiting for transfer...").start();
@@ -99,7 +101,7 @@ export const fundAccounts = async (accounts: Account[], env: Record<string, stri
           const balance = await publicClient.getBalance({ address: account.address });
           if (balance !== account.balance) {
             const msg = `${account.name} balance change detected: ${formatEther(balance)}`;
-            if (balance > account.recommendedBalance) {
+            if (balance >= account.recommendedBalance) {
               spinner.succeed(msg);
             } else {
               spinner.warn(
