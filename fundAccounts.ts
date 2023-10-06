@@ -50,27 +50,27 @@ export const fundAccounts = async (accounts: Account[], env: Record<string, stri
       const publicClient = createPublicClient({ transport: http(env.L1_RPC) });
 
       if (opt === "auto") {
-        const adminBalance = accounts[0].balance;
+        const adminAccount = accounts[0];
         const requiredAmount = balanceWarningAccounts.reduce(
           (prev, curr) => prev + curr.recommendedBalance - curr.balance,
           0n,
         );
-        const requiredBalance = requiredAmount + adminBalance;
+        const requiredBalance = requiredAmount + adminAccount.balance;
 
         console.log(
           `Send ${formatEther(requiredAmount)} L1 native token to Admin account: ${
-            accounts[0].address
+            adminAccount.address
           }`,
         );
         const spinner = new Kia("Waiting for transfer...").start();
-        let prevBalance = adminBalance;
+        let prevBalance = adminAccount.balance;
         do {
-          const balance = await publicClient.getBalance({ address: accounts[0].address });
+          const balance = await publicClient.getBalance({ address: adminAccount.address });
           if (balance !== prevBalance) {
             const msg = `Admin account balance change detected: ${formatEther(balance)}`;
             if (balance >= requiredBalance) {
               spinner.succeed(msg);
-              accounts[0].balance = balance;
+              adminAccount.balance = balance;
             } else {
               spinner.warn(msg + ` (need ${formatEther(requiredBalance - balance)} more)`).start();
             }
