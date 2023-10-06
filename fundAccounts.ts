@@ -58,9 +58,9 @@ export const fundAccounts = async (accounts: Account[], env: Record<string, stri
         const requiredBalance = requiredAmount + adminAccount.balance;
 
         console.log(
-          `Send ${formatEther(requiredAmount)} L1 native token to Admin account: ${
-            adminAccount.address
-          }`,
+          `Send ${
+            formatEther(requiredAmount)
+          } L1 native token to Admin account: ${adminAccount.address}`,
         );
         const spinner = new Kia("Waiting for transfer...").start();
         let prevBalance = adminAccount.balance;
