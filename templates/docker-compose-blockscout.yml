@@ -10,6 +10,7 @@
       - op-geth
     volumes:
       - ./data/blockscout/logs/:/app/logs/
+      - ./data/genesis/genesis.json:/genesis.json:ro
     ports:
       - 4000:4000
     environment:
@@ -22,6 +23,7 @@
       PORT: 4000
       SECRET_KEY_BASE: 56NtB48ear7+wMSf0IQuWDAAazhpb31qyc7GiyspBP2vh7t5zlCsF5QDv76chXeN
       MIX_ENV: prod
+      CHAIN_SPEC_PATH: /genesis.json
     command: sh -c "bin/blockscout eval \"Elixir.Explorer.ReleaseTasks.create_and_migrate()\" && bin/blockscout start"
 
   blockscout-redis:
