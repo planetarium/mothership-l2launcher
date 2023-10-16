@@ -2,14 +2,15 @@ ARG OPTIMISM_VERSION=v1.1.4
 
 FROM us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:${OPTIMISM_VERSION} as op-node
 
-FROM frolvlad/alpine-glibc:alpine-3.17 as optimism-genesis-deployer
-
-COPY --from=op-node /usr/local/bin/op-node /usr/local/bin
-COPY --from=ghcr.io/foundry-rs/foundry:latest /usr/local/bin /usr/local/bin
+FROM node:lts as builder
 ARG OPTIMISM_VERSION
-
-RUN apk add --no-cache git bash jq nodejs-current openssl \
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y git curl jq ca-certificates python3 build-essential \
+    && rm -rf /var/lib/apt/lists/* \
     && corepack enable \
+    && curl -L https://foundry.paradigm.xyz | bash \
+    && export PATH=$PATH:~/.foundry/bin \
+    && foundryup \
     && git clone https://github.com/ethereum-optimism/optimism.git /optimism \
         -b ${OPTIMISM_VERSION} --no-checkout --depth=1 \
     && cd /optimism \
@@ -24,6 +25,14 @@ RUN apk add --no-cache git bash jq nodejs-current openssl \
     && mv * /deploy \
     && rm -rf /optimism /root/.cache /root/.local/share/pnpm
 
+FROM debian:12-slim as optimism-genesis-deployer
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y git jq openssl \
+    && rm -rf /var/lib/apt/lists/*
+COPY --from=builder /deploy/ /deploy/
+COPY --from=builder /root/.foundry/bin/cast /usr/local/bin/
+COPY --from=builder /root/.foundry/bin/forge /usr/local/bin/
+COPY --from=op-node /usr/local/bin/op-node /usr/local/bin/op-node
 COPY deploy.sh /deploy.sh
 
 CMD ["/bin/sh", "/deploy.sh"]
