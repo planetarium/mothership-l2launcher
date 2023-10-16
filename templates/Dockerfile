@@ -1,12 +1,17 @@
-ARG OPTIMISM_VERSION=v1.1.4
+ARG OPTIMISM_VERSION="v1.1.4"
 
 FROM us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:${OPTIMISM_VERSION} as op-node
 
+FROM buildpack-deps:scm as foundry
+ARG TARGETARCH
+ARG FOUNDRY_URL="https://github.com/foundry-rs/foundry/releases/download/nightly/foundry_nightly_linux_${TARGETARCH}.tar.gz"
+RUN curl -L ${FOUNDRY_URL} | tar -xz -C /usr/local/bin
+
 FROM --platform=$BUILDPLATFORM node:lts as builder
+ARG BUILDARCH
+ARG FOUNDRY_URL="https://github.com/foundry-rs/foundry/releases/download/nightly/foundry_nightly_linux_${BUILDARCH}.tar.gz"
 ARG OPTIMISM_VERSION
-RUN curl -L https://foundry.paradigm.xyz | bash \
-    && export PATH=$PATH:~/.foundry/bin \
-    && foundryup \
+RUN curl -L ${FOUNDRY_URL} | tar -xz -C /usr/local/bin \
     && git clone https://github.com/ethereum-optimism/optimism.git /optimism \
         -b ${OPTIMISM_VERSION} --no-checkout --depth=1 \
     && cd /optimism \
@@ -25,9 +30,9 @@ RUN apt-get update \
     && apt-get install --no-install-recommends -y jq openssl \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /deploy/ /deploy/
-COPY --from=builder /root/.foundry/bin/cast /usr/local/bin/cast
-COPY --from=builder /root/.foundry/bin/forge /usr/local/bin/forge
-COPY --from=builder /usr/bin/git /usr/bin/git
+COPY --from=foundry /usr/bin/git /usr/bin/git
+COPY --from=foundry /usr/local/bin/cast /usr/local/bin/cast
+COPY --from=foundry /usr/local/bin/forge /usr/local/bin/forge
 COPY --from=op-node /usr/local/bin/op-node /usr/local/bin/op-node
 COPY deploy.sh /deploy.sh
 
