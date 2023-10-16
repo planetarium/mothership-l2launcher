@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 set -e
 
 test -e /data/genesis.json && exit 0
@@ -6,14 +6,10 @@ test -e /data/genesis.json && exit 0
 mkdir -p /data
 openssl rand -hex 32 > /data/jwt.txt
 
-echo "nameserver 1.1.1.1" >> /etc/resolv.conf
-echo "nameserver 8.8.8.8" >> /etc/resolv.conf
-
-export PATH=$PATH:~/.foundry/bin
 cast block finalized --json --rpc-url ${L1_RPC} > l1_finalized
 export blockHash="$(cat l1_finalized | jq -r .hash)"
 export timestamp="$(printf %d $(cat l1_finalized | jq -r .timestamp))"
-export chainId="$(cast chain-id --rpc-url ${L1_RPC})"
+export l1ChainId="$(cast chain-id --rpc-url ${L1_RPC})"
 
 export ETH_RPC_URL="${L1_RPC}"
 export PRIVATE_KEY="${ADMIN_KEY}"
@@ -28,7 +24,7 @@ cat deploy-config/${DEPLOYMENT_CONTEXT}.json \
   | sed "s/\"\\?TIMESTAMP\"\\?/\"TIMESTAMP\"/" \
   | jq ".l1BlockTime=12" \
   | jq ".l1StartingBlockTag=\"${blockHash}\"" \
-  | jq ".l1ChainID=$(printf %d ${chainId})" \
+  | jq ".l1ChainID=$(printf %d ${l1ChainId})" \
   | jq ".l2ChainID=$(printf %d ${L2_CHAIN_ID})" \
   | jq ".l2OutputOracleStartingTimestamp=${timestamp}" \
   > deploy-config/${DEPLOYMENT_CONTEXT}.json.new
