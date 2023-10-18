@@ -2,7 +2,6 @@
 
 import { crypto } from "std/crypto/mod.ts";
 import { load as loadDotenv } from "std/dotenv/mod.ts";
-import { copy } from "std/fs/mod.ts";
 import { join as joinPath } from "std/path/mod.ts";
 
 import { Confirm, type ConfirmOptions, Input } from "cliffy/prompt/mod.ts";
@@ -74,10 +73,6 @@ if (
   })
 ) {
   dockerComposeYml += "\n" + await Deno.readTextFile("templates/docker-compose-blockscout.yml");
-  await Promise.all([
-    copy("templates/services", "out/services", { overwrite: true }),
-    copy("templates/envs", "out/envs", { overwrite: true }),
-  ]);
 }
 
 if (
