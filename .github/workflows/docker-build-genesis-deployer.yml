@@ -1,4 +1,4 @@
-name: Docker
+name: Build genesis-deployer docker image
 
 on:
   push:
@@ -45,11 +45,12 @@ jobs:
             type=ref,event=branch
             type=ref,event=pr
             type=sha
+
       - name: Build and push Docker image
         id: build-and-push
         uses: docker/build-push-action@v5.0.0
         with:
-          context: "{{defaultContext}}:templates"
+          context: "{{defaultContext}}:genesis-deployer"
           platforms: linux/amd64,linux/arm64/v8
           push: true
           tags: ${{ steps.meta.outputs.tags }}
@@ -59,7 +60,7 @@ jobs:
 
       - name: Sign the published Docker image
         if: ${{ github.event_name != 'pull_request' }}
+        run: echo "${TAGS}" | xargs -I {} cosign sign --yes {}@${DIGEST}
         env:
           TAGS: ${{ steps.meta.outputs.tags }}
           DIGEST: ${{ steps.build-and-push.outputs.digest }}
-        run: echo "${TAGS}" | xargs -I {} cosign sign --yes {}@${DIGEST}
