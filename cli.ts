@@ -2,7 +2,6 @@
 
 import { crypto } from "std/crypto/mod.ts";
 import { load as loadDotenv } from "std/dotenv/mod.ts";
-import { copy } from "std/fs/mod.ts";
 import { join as joinPath } from "std/path/mod.ts";
 
 import { Confirm, type ConfirmOptions, Input } from "cliffy/prompt/mod.ts";
@@ -30,6 +29,7 @@ const envKeys = [
   "BATCHER_KEY",
   "SEQUENCER_KEY",
   "ERC4337_BUNDLER_KEY",
+  "BLOCKSCOUT_IMAGE",
 ] as const;
 
 const env = {
@@ -74,10 +74,9 @@ if (
   })
 ) {
   dockerComposeYml += "\n" + await Deno.readTextFile("templates/docker-compose-blockscout.yml");
-  await Promise.all([
-    copy("templates/services", "out/services", { overwrite: true }),
-    copy("templates/envs", "out/envs", { overwrite: true }),
-  ]);
+  if (Deno.build.arch === "aarch64") {
+    env.BLOCKSCOUT_IMAGE = "ghcr.io/planetarium/mothership-l2launcher-blockscout";
+  }
 }
 
 if (

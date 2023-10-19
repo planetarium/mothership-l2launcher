@@ -1,9 +1,9 @@
-version: '3.8'
+version: "3.8"
 
 services:
   genesis:
     container_name: genesis
-    image: "ghcr.io/planetarium/mothership-l2launcher-genesis-deployer:latest"
+    image: ghcr.io/planetarium/mothership-l2launcher-genesis-deployer:latest
     environment:
       - ADMIN_KEY=${ADMIN_KEY}
       - PROPOSER_KEY=${PROPOSER_KEY}
@@ -16,7 +16,7 @@ services:
 
   op-geth-init:
     container_name: op-geth-init
-    image: "us-docker.pkg.dev/oplabs-tools-artifacts/images/op-geth:v1.101200.1"
+    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-geth:v1.101200.1
     depends_on:
       genesis:
         condition: service_completed_successfully
@@ -31,7 +31,7 @@ services:
 
   op-geth:
     container_name: op-geth
-    image: "us-docker.pkg.dev/oplabs-tools-artifacts/images/op-geth:v1.101200.1"
+    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-geth:v1.101200.1
     volumes:
       - ./data/op-geth:/data
       - ./data/genesis:/genesis
@@ -65,11 +65,11 @@ services:
       - --rollup.disabletxpoolgossip=true
     healthcheck:
       test: ["CMD", "nc", "-z", "localhost", "8545"]
-      start_interval: 1s
+      interval: 5s
 
   op-node:
     container_name: op-node
-    image: "us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:v1.1.4"
+    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:v1.1.4
     volumes:
       - ./data/op-node:/data
       - ./data/genesis:/genesis    
@@ -98,11 +98,11 @@ services:
           --log.level=debug
     healthcheck:
       test: ["CMD", "nc", "-z", "localhost", "8547"]
-      start_interval: 1s
+      interval: 5s
 
   op-batcher:
     container_name: op-batcher
-    image: "us-docker.pkg.dev/oplabs-tools-artifacts/images/op-batcher:v1.1.4"
+    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-batcher:v1.1.4
     depends_on:
       op-node:
         condition: service_healthy
@@ -128,7 +128,7 @@ services:
 
   op-proposer:
     container_name: op-proposer
-    image: "us-docker.pkg.dev/oplabs-tools-artifacts/images/op-proposer:v1.1.4"
+    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-proposer:v1.1.4
     volumes:
       - ./data/genesis:/genesis
     depends_on:
