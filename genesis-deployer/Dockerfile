@@ -27,7 +27,7 @@ RUN curl -L ${FOUNDRY_URL} | tar -xz -C /usr/local/bin \
 
 FROM debian:12-slim as optimism-genesis-deployer
 RUN apt-get update \
-    && apt-get install --no-install-recommends -y jq openssl musl \
+    && apt-get install --no-install-recommends -y jq openssl musl ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /deploy/ /deploy/
 COPY --from=foundry /usr/bin/git /usr/bin/git
