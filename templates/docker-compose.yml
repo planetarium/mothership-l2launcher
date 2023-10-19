@@ -14,9 +14,9 @@ services:
     volumes:
       - ./data/genesis:/data
 
-  predeploy:
-    container_name: predeploy
-    image: "ghcr.io/planetarium/mothership-l2launcher-predeploy:latest"
+  genesis-init-predeploy:
+    container_name: genesis-init-predeploy
+    image: ghcr.io/planetarium/mothership-l2launcher-genesis-init-predeploy:latest
     depends_on:
       genesis:
         condition: service_completed_successfully
@@ -36,7 +36,7 @@ services:
       - 8546:8546
       - 8551:8551
     depends_on:
-      predeploy:
+      genesis-init-predeploy:
         condition: service_completed_successfully
     command:
       - --datadir=/data
