@@ -1,6 +1,6 @@
   blockscout:
     container_name: blockscout
-    image: ghcr.io/planetarium/mothership-l2launcher-blockscout:5.2.2
+    image: ${BLOCKSCOUT_IMAGE:-blockscout/blockscout}
     depends_on:
       - blockscout-postgres
       - blockscout-redis

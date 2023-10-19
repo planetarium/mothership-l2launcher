@@ -29,6 +29,7 @@ const envKeys = [
   "BATCHER_KEY",
   "SEQUENCER_KEY",
   "ERC4337_BUNDLER_KEY",
+  "BLOCKSCOUT_IMAGE",
 ] as const;
 
 const env = {
@@ -73,6 +74,9 @@ if (
   })
 ) {
   dockerComposeYml += "\n" + await Deno.readTextFile("templates/docker-compose-blockscout.yml");
+  if (Deno.build.arch === "aarch64") {
+    env.BLOCKSCOUT_IMAGE = "ghcr.io/planetarium/mothership-l2launcher-blockscout";
+  }
 }
 
 if (
