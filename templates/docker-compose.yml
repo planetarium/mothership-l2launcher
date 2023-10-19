@@ -14,20 +14,16 @@ services:
     volumes:
       - ./data/genesis:/data
 
-  op-geth-init:
-    container_name: op-geth-init
-    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-geth:v1.101200.1
+  genesis-init-predeploy:
+    container_name: genesis-init-predeploy
+    image: ghcr.io/planetarium/mothership-l2launcher-genesis-init-predeploy:latest
     depends_on:
       genesis:
         condition: service_completed_successfully
     volumes:
       - ./data/op-geth:/data
       - ./data/genesis:/genesis
-    entrypoint: ["sh", "-c"]
-    command:
-      - |
-        test -e /data/geth/chaindata/CURRENT && exit 0
-        geth init --datadir=/data /genesis/genesis.json
+      - ./predeploy.json:/genesis/predeploy.json:ro
 
   op-geth:
     container_name: op-geth
@@ -40,7 +36,7 @@ services:
       - 8546:8546
       - 8551:8551
     depends_on:
-      op-geth-init:
+      genesis-init-predeploy:
         condition: service_completed_successfully
     command:
       - --datadir=/data

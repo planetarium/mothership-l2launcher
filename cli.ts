@@ -98,6 +98,9 @@ if (
   }
 }
 
+console.log("Using predeploys from templates/predeploy.json.");
+await Deno.copyFile("templates/predeploy.json", "out/predeploy.json");
+
 await Deno.writeTextFile("out/docker-compose.yml", dockerComposeYml);
 console.log("out/docker-compose.yml copied.");
 
