@@ -24,9 +24,10 @@
       ECTO_USE_SSL: false
       PORT: 4000
       SECRET_KEY_BASE: 56NtB48ear7+wMSf0IQuWDAAazhpb31qyc7GiyspBP2vh7t5zlCsF5QDv76chXeN
-      MICROSERVICE_VISUALIZE_SOL2UML_URL: http://visualizer:8050/
-      MICROSERVICE_SIG_PROVIDER_URL: http://sig-provider:8050/
-      MICROSERVICE_SC_VERIFIER_URL: http://smart-contract-verifier:8050/
+      MICROSERVICE_SC_VERIFIER_ENABLED: true
+      MICROSERVICE_VISUALIZE_SOL2UML_URL: http://blockscout-visualizer:8050/
+      MICROSERVICE_SIG_PROVIDER_URL: http://blockscout-sig-provider:8050/
+      MICROSERVICE_SC_VERIFIER_URL: http://blockscout-smart-contract-verifier:8050/
     command: sh -c "bin/blockscout eval \"Elixir.Explorer.ReleaseTasks.create_and_migrate()\" && bin/blockscout start"
 
   blockscout-redis:
