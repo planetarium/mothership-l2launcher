@@ -8,7 +8,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: planetarium/mothership-l2launcher-genesis-init-predeploy
+  IMAGE_NAME: ${{ github.repository_owner }}/mothership-l2launcher-genesis-init-predeploy
 
 jobs:
   build:
