@@ -1,0 +1,65 @@
+name: Deno Compile
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target:
+          - x86_64-unknown-linux-gnu
+          - x86_64-pc-windows-msvc
+          - x86_64-apple-darwin
+          - aarch64-apple-darwin
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: denoland/setup-deno@v1
+
+      - name: deno compile ${{ matrix.target }}
+        run: >
+          deno compile
+          --allow-net
+          --allow-read
+          --allow-write=./
+          --allow-run=docker
+          --location=https://raw.githubusercontent.com/planetarium/mothership-l2launcher/main
+          --target=${{ matrix.target }}
+          --output=build/l2launcher-${{ matrix.target }}
+          cli.ts
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: builds
+          path: build/*
+          if-no-files-found: error
+          retention-days: 1
+
+  release:
+    runs-on: ubuntu-latest
+    needs:
+      - build
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: builds
+          path: build
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          prerelease: true
+          draft: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+          files: |
+            build/l2launcher-x86_64-unknown-linux-gnu
+            build/l2launcher-aarch64-apple-darwin 
+            build/l2launcher-x86_64-apple-darwin
+            build/l2launcher-x86_64-pc-windows-msvc.exe
+

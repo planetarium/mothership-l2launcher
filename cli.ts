@@ -21,6 +21,11 @@ const getAddressFromPrivateKey = async (key: string | Uint8Array) => {
 
 const confirmOptions: Partial<ConfirmOptions> = { active: "y", inactive: "n" };
 
+const fetchTemplate = (path: string) => {
+  if (globalThis.location) return fetch(path).then((res) => res.text());
+  return Deno.readTextFile(path);
+}
+
 const envKeys = [
   "L1_RPC",
   "L2_CHAIN_ID",
@@ -63,7 +68,7 @@ if (!(env.ADMIN_KEY && env.PROPOSER_KEY && env.BATCHER_KEY && env.SEQUENCER_KEY)
   }
 }
 
-let dockerComposeYml = await Deno.readTextFile("templates/docker-compose.yml");
+let dockerComposeYml = await fetchTemplate("templates/docker-compose.yml");
 
 await Deno.mkdir("out", { recursive: true });
 
@@ -73,7 +78,7 @@ if (
     ...confirmOptions,
   })
 ) {
-  dockerComposeYml += "\n" + await Deno.readTextFile("templates/docker-compose-blockscout.yml");
+  dockerComposeYml += "\n" + await fetchTemplate("templates/docker-compose-blockscout.yml");
   if (Deno.build.arch === "aarch64") {
     env.BLOCKSCOUT_IMAGE = "ghcr.io/planetarium/mothership-l2launcher-blockscout";
   }
@@ -82,7 +87,7 @@ if (
 if (
   await Confirm.prompt({ message: "Add Skandha bundler to docker-compose.yml?", ...confirmOptions })
 ) {
-  dockerComposeYml += "\n" + await Deno.readTextFile("templates/docker-compose-bundler.yml");
+  dockerComposeYml += "\n" + await fetchTemplate("templates/docker-compose-bundler.yml");
   if (!env.ERC4337_BUNDLER_KEY) {
     if (
       await Confirm.prompt({
@@ -99,7 +104,7 @@ if (
 }
 
 console.log("Using predeploys from templates/predeploy.json.");
-await Deno.copyFile("templates/predeploy.json", "out/predeploy.json");
+await Deno.writeTextFile("out/predeploy.json", await fetchTemplate("templates/predeploy.json"));
 
 await Deno.writeTextFile("out/docker-compose.yml", dockerComposeYml);
 console.log("out/docker-compose.yml copied.");
