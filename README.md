@@ -1,10 +1,10 @@
 # L2launcher
 
 This repository contains base `docker-compose.yml` template to setup [Optimism Stack] and optional
-[Skandha Bundler] with a CLI script to fill out required environment variables into .env.
+[Stackup Bundler] with a CLI script to fill out required environment variables into .env.
 
 [Optimism Stack]: https://stack.optimism.io/
-[Skandha Bundler]: https://github.com/etherspot/skandha
+[Stackup Bundler]: https://github.com/stackup-wallet/stackup-bundler
 
 ## Usage
 
@@ -20,7 +20,7 @@ This repository contains base `docker-compose.yml` template to setup [Optimism S
     - SEQUENCER_KEY
   - L1_RPC
   - L2_CHAIN_ID
-  - ERC4337_BUNDLER_KEY (optional, used for Skandha Bundler)
+  - ERC4337_BUNDLER_KEY (optional, used for Stackup Bundler)
 
 [Docker]: https://docs.docker.com/engine/install/
 [Deno]: https://deno.com/
@@ -40,7 +40,7 @@ You can find output files at `out` directory, `.env` and `docker-compose.yml`.
 If every required environment variables are set or present in `.env` file, you can just run
 `docker compose up -d` with `templates/docker-compose.yml` directly without running the CLI.
 
-However, the base compose template doesn't include Skandha Bundler and BlockScout explorer, so you
+However, the base compose template doesn't include Stackup Bundler and BlockScout explorer, so you
 might need to copy `templates/docker-compose-bundler.yml` and
 `templates/docker-compose-blockscout.yml` templates respectively into the base compose template or
 setup manually.

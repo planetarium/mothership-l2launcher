@@ -1,16 +1,12 @@
-  skandha-bundler:
-    container_name: skandha-bundler
-    image: etherspot/skandha
+  stackup-bundler:
+    container_name: stackup-bundler
+    image: ghcr.io/planetarium/mothership-l2launcher-stackup-bundler:latest
     ports:
-      - 14337:14337
+      - 4337:4337/tcp
     depends_on:
       op-geth:
         condition: service_healthy
     environment:
-      SKANDHA_NETWORKS: dev
-      SKANDHA_DEV_RPC: http://op-geth:8545
-      SKANDHA_DEV_ENTRYPOINTS: ${ERC4337_ENTRYPOINT:-0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789}
-      SKANDHA_DEV_RELAYER: ${ERC4337_BUNDLER_KEY}
-    command:
-      - standalone
-      - --redirectRpc
+      ERC4337_BUNDLER_ETH_CLIENT_URL: http://op-geth:8545
+      ERC4337_BUNDLER_SUPPORTED_ENTRY_POINTS: ${ERC4337_ENTRYPOINT:-0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789}
+      ERC4337_BUNDLER_PRIVATE_KEY: ${ERC4337_BUNDLER_KEY}
