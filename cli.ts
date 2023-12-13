@@ -85,7 +85,7 @@ if (
 }
 
 if (
-  await Confirm.prompt({ message: "Add Skandha bundler to docker-compose.yml?", ...confirmOptions })
+  await Confirm.prompt({ message: "Add Stackup bundler to docker-compose.yml?", ...confirmOptions })
 ) {
   dockerComposeYml += "\n" + await fetchTemplate("templates/docker-compose-bundler.yml");
   if (!env.ERC4337_BUNDLER_KEY) {
@@ -99,6 +99,9 @@ if (
     } else {
       env.ERC4337_BUNDLER_KEY = generatePrivateKey();
       console.log("Generated a random bundler account.");
+    }
+    if (env.ERC4337_BUNDLER_KEY.startsWith('0x')) {
+      env.ERC4337_BUNDLER_KEY = env.ERC4337_BUNDLER_KEY.slice(2);
     }
   }
 }
