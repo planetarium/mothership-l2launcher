@@ -9,12 +9,12 @@
       - op-geth
     volumes:
       - ./data/blockscout/logs/:/app/logs/
-      - ./data/genesis/genesis.json:/genesis.json:ro
+      - ./data/genesis:/genesis:ro
     ports:
       - 4000:4000
     environment:
       CHAIN_ID: ${L2_CHAIN_ID}
-      CHAIN_SPEC_PATH: /genesis.json
+      CHAIN_SPEC_PATH: /genesis/genesis.json
       NETWORK:
       SUBNETWORK: L2 CHAIN ${L2_CHAIN_ID}
       # LOGO: /images/blockscout_logo.svg
