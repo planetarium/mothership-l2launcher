@@ -1,6 +1,7 @@
-ARG OPTIMISM_VERSION="v1.1.4"
+ARG OPTIMISM_CONTRACTS_HEAD="op-node/v1.4.2"
+ARG OP_NODE_VERSION="v1.4.2"
 
-FROM us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:${OPTIMISM_VERSION} as op-node
+FROM us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:${OP_NODE_VERSION} as op-node
 
 FROM buildpack-deps:scm as foundry
 ARG TARGETARCH
@@ -10,10 +11,10 @@ RUN curl -L ${FOUNDRY_URL} | tar -xz -C /usr/local/bin
 FROM --platform=$BUILDPLATFORM node:lts as builder
 ARG BUILDARCH
 ARG FOUNDRY_URL="https://github.com/foundry-rs/foundry/releases/download/nightly/foundry_nightly_linux_${BUILDARCH}.tar.gz"
-ARG OPTIMISM_VERSION
+ARG OPTIMISM_CONTRACTS_HEAD
 RUN curl -L ${FOUNDRY_URL} | tar -xz -C /usr/local/bin \
     && git clone https://github.com/ethereum-optimism/optimism.git /optimism \
-        -b ${OPTIMISM_VERSION} --no-checkout --depth=1 \
+        -b ${OPTIMISM_CONTRACTS_HEAD} --no-checkout --depth=1 \
     && cd /optimism \
     && git sparse-checkout init --cone \
     && git sparse-checkout set packages/contracts-bedrock \
