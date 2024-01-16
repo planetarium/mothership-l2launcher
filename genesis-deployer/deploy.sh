@@ -6,33 +6,30 @@ test -e /data/genesis.json && exit 0
 mkdir -p /data
 openssl rand -hex 32 > /data/jwt.txt
 
-cast block finalized --json --rpc-url ${L1_RPC} > l1_finalized
-export blockHash="$(cat l1_finalized | jq -r .hash)"
-export timestamp="$(printf %d $(cat l1_finalized | jq -r .timestamp))"
-export l1ChainId="$(cast chain-id --rpc-url ${L1_RPC})"
+export GS_ADMIN_ADDRESS="$(cast wallet address --private-key ${ADMIN_KEY})";
+export GS_PROPOSER_ADDRESS="$(cast wallet address --private-key ${PROPOSER_KEY})";
+export GS_BATCHER_ADDRESS="$(cast wallet address --private-key ${BATCHER_KEY})";
+export GS_SEQUENCER_ADDRESS="$(cast wallet address --private-key ${SEQUENCER_KEY})";
 
-export ETH_RPC_URL="${L1_RPC}"
-export PRIVATE_KEY="${ADMIN_KEY}"
+export L1_RPC_URL="${L1_RPC}"
+export L1_CHAIN_ID="$(cast chain-id --rpc-url ${L1_RPC_URL})"
+export IMPL_SALT=$(openssl rand -hex 32)
 export DEPLOYMENT_CONTEXT="getting-started"
 
 cd /deploy
-cat deploy-config/${DEPLOYMENT_CONTEXT}.json \
-  | sed "s/ADMIN/$(cast wallet address --private-key ${ADMIN_KEY})/" \
-  | sed "s/PROPOSER/$(cast wallet address --private-key ${PROPOSER_KEY})/" \
-  | sed "s/BATCHER/$(cast wallet address --private-key ${BATCHER_KEY})/" \
-  | sed "s/SEQUENCER/$(cast wallet address --private-key ${SEQUENCER_KEY})/" \
-  | sed "s/\"\\?TIMESTAMP\"\\?/\"TIMESTAMP\"/" \
-  | jq ".l1BlockTime=12" \
-  | jq ".l1StartingBlockTag=\"${blockHash}\"" \
-  | jq ".l1ChainID=$(printf %d ${l1ChainId})" \
+./scripts/getting-started/config.sh
+mv deploy-config/getting-started.json deploy-config/${DEPLOYMENT_CONTEXT}.json.old
+
+cat deploy-config/${DEPLOYMENT_CONTEXT}.json.old \
+  | jq ".l1ChainID=$(printf %d ${L1_CHAIN_ID})" \
   | jq ".l2ChainID=$(printf %d ${L2_CHAIN_ID})" \
-  | jq ".l2OutputOracleStartingTimestamp=${timestamp}" \
-  > deploy-config/${DEPLOYMENT_CONTEXT}.json.new
-mv deploy-config/${DEPLOYMENT_CONTEXT}.json.new deploy-config/${DEPLOYMENT_CONTEXT}.json
+  > deploy-config/${DEPLOYMENT_CONTEXT}.json
+
+cat deploy-config/${DEPLOYMENT_CONTEXT}.json
 
 mkdir -p deployments/${DEPLOYMENT_CONTEXT}
-forge script scripts/Deploy.s.sol:Deploy --private-key ${ADMIN_KEY} --broadcast --rpc-url ${L1_RPC}
-forge script scripts/Deploy.s.sol:Deploy --sig 'sync()' --private-key ${ADMIN_KEY} --broadcast --rpc-url ${L1_RPC}
+forge script scripts/Deploy.s.sol:Deploy --private-key ${ADMIN_KEY} --broadcast --rpc-url ${L1_RPC_URL}
+forge script scripts/Deploy.s.sol:Deploy --sig 'sync()' --private-key ${ADMIN_KEY} --broadcast --rpc-url ${L1_RPC_URL}
 
 cat deployments/${DEPLOYMENT_CONTEXT}/L2OutputOracleProxy.json \
   | jq -r .address \
@@ -43,4 +40,4 @@ op-node genesis l2 \
   --deployment-dir deployments/${DEPLOYMENT_CONTEXT} \
   --outfile.l2 /data/genesis.json \
   --outfile.rollup /data/rollup.json \
-  --l1-rpc ${L1_RPC}
+  --l1-rpc ${L1_RPC_URL}
