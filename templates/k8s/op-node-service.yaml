@@ -6,11 +6,24 @@ metadata:
 spec:
   selector:
     name: op-node
+  type: LoadBalancer
   ports:
     - protocol: TCP
-      name: rpc
+      name: op-geth-httprpc
+      port: 8545
+      targetPort: 8545
+    - protocol: TCP
+      name: op-geth-wsrpc
+      port: 8546
+      targetPort: 8546
+    - protocol: TCP
+      name: op-geth-authrpc
+      port: 8551
+      targetPort: 8551
+    - protocol: TCP
+      name: op-node-rpc
       port: 8547
       targetPort: 8547
     - protocol: TCP
-      name: p2p
+      name: op-node-p2p
       port: 9003

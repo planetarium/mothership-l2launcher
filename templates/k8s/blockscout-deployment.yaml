@@ -59,9 +59,9 @@ spec:
             - name: EMISSION_FORMAT
               value: DEFAULT
             - name: ETHEREUM_JSONRPC_HTTP_URL
-              value: http://op-geth:8545/
+              value: http://op-node:8545/
             - name: ETHEREUM_JSONRPC_TRACE_URL
-              value: http://op-geth:8545/
+              value: http://op-node:8545/
             - name: ETHEREUM_JSONRPC_VARIANT
               value: geth
             - name: EXTERNAL_APPS
