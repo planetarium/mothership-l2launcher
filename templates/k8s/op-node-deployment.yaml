@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: op-node
+  namespace: l2launcher
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: op-node
+  template:
+    metadata:
+      labels:
+        name: op-node
+    spec:
+      containers:
+        - args:
+            - |
+              op-node \
+                --l2=http://op-geth:8551 \
+                --l2.jwt-secret=/genesis/jwt.txt \
+                --sequencer.enabled \
+                --sequencer.l1-confs=3 \
+                --verifier.l1-confs=3 \
+                --rollup.config=/genesis/rollup.json \
+                --rpc.addr=0.0.0.0 \
+                --rpc.port=8547 \
+                --p2p.disable \
+                --rpc.enable-admin \
+                --p2p.sequencer.key=$${SEQUENCER_KEY#0x} \
+                --l1=$(L1_RPC) \
+                --l1.rpckind=any \
+                --log.level=debug
+          command:
+            - sh
+            - -c
+          env:
+            - name: L1_RPC
+              valueFrom:
+                configMapKeyRef:
+                  name: env-cm
+                  key: L1_RPC
+            - name: SEQUENCER_KEY
+              valueFrom:
+                configMapKeyRef:
+                  name: env-cm
+                  key: SEQUENCER_KEY
+          image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:v1.4.2
+          livenessProbe:
+            exec:
+              command:
+                - nc
+                - -z
+                - localhost
+                - "8547"
+            periodSeconds: 5
+          name: op-node
+          ports:
+            - containerPort: 8547
+              hostPort: 8547
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /data
+              name: op-node-pvc
+            - mountPath: /genesis
+              name: genesis-pvc
+      restartPolicy: Always
+      volumes:
+        - name: op-node-pvc
+          persistentVolumeClaim:
+            claimName: op-node-pvc
+        - name: genesis-pvc
+          persistentVolumeClaim:
+            claimName: genesis-pvc

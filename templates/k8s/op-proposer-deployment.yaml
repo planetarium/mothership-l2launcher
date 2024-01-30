@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: op-proposer
+  namespace: l2launcher
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: op-proposer
+  template:
+    metadata:
+      labels:
+        name: op-proposer
+    spec:
+      containers:
+        - args:
+            - |
+              op-proposer \
+                --poll-interval=12s \
+                --rpc.port=8560 \
+                --rollup-rpc=http://op-node:8547 \
+                --l2oo-address=$(cat /genesis/L2OutputOracleProxyAddress) \
+                --private-key=$(PROPOSER_KEY) \
+                --l1-eth-rpc=$(L1_RPC)
+          env:
+            - name: L1_RPC
+              valueFrom:
+                configMapKeyRef:
+                  name: env-cm
+                  key: L1_RPC
+            - name: PROPOSER_KEY
+              valueFrom:
+                configMapKeyRef:
+                  name: env-cm
+                  key: PROPOSER_KEY
+          command:
+            - sh
+            - -c
+          image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-proposer:v1.4.2
+          name: op-proposer
+          volumeMounts:
+            - mountPath: /genesis
+              name: genesis-pvc
+      restartPolicy: Always
+      volumes:
+        - name: genesis-pvc
+          persistentVolumeClaim:
+            claimName: genesis-pvc

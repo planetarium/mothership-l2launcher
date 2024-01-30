@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: op-batcher
+  namespace: l2launcher
+spec:
+  selector:
+    matchLabels:
+      name: op-batcher
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: op-batcher
+    spec:
+      containers:
+        - args:
+            - |
+              op-batcher \
+                --l1-eth-rpc=$(L1_RPC) \
+                --l2-eth-rpc=http://op-geth:8545 \
+                --rollup-rpc=http://op-node:8547 \
+                --poll-interval=1s \
+                --sub-safety-margin=6 \
+                --num-confirmations=1 \
+                --safe-abort-nonce-too-low-count=3 \
+                --resubmission-timeout=30s \
+                --rpc.addr=0.0.0.0 \
+                --rpc.port=8548 \
+                --rpc.enable-admin \
+                --max-channel-duration=1 \
+                --private-key=$(BATCHER_KEY)
+          command:
+            - sh
+            - -c
+          env:
+            - name: L1_RPC
+              valueFrom:
+                configMapKeyRef:
+                  name: env-cm
+                  key: L1_RPC
+            - name: BATCHER_KEY
+              valueFrom:
+                configMapKeyRef:
+                  name: env-cm
+                  key: BATCHER_KEY
+          image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-batcher:v1.4.2
+          name: op-batcher
+      restartPolicy: Always
