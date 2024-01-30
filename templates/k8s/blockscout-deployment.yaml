@@ -134,7 +134,6 @@ spec:
           name: blockscout
           ports:
             - containerPort: 4000
-              hostPort: 4000
               protocol: TCP
           volumeMounts:
             - mountPath: /genesis.json

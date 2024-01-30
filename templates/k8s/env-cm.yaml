@@ -4,3 +4,5 @@ metadata:
   name: env-cm
   namespace: l2launcher
 data:
+  L1_RPC: ""
+  L2_CHAIN_ID: ""

@@ -41,9 +41,11 @@ spec:
                   key: L1_RPC
             - name: BATCHER_KEY
               valueFrom:
-                configMapKeyRef:
-                  name: env-cm
+                secretKeyRef:
+                  name: env-secret
                   key: BATCHER_KEY
           image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-batcher:v1.4.2
           name: op-batcher
-      restartPolicy: Always
+          ports:
+            - containerPort: 8548
+              protocol: TCP

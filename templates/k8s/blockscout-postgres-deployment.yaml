@@ -32,7 +32,6 @@ spec:
           volumeMounts:
             - mountPath: /var/lib/postgresql/data
               name: blockscout-postgres-pvc
-      restartPolicy: Always
       volumes:
         - name: blockscout-postgres-pvc
           persistentVolumeClaim:

@@ -8,5 +8,9 @@ spec:
     name: op-node
   ports:
     - protocol: TCP
+      name: rpc
       port: 8547
       targetPort: 8547
+    - protocol: TCP
+      name: p2p
+      port: 9003

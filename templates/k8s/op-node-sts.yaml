@@ -1,10 +1,10 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: op-node
   namespace: l2launcher
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       name: op-node
@@ -25,8 +25,9 @@ spec:
                 --rollup.config=/genesis/rollup.json \
                 --rpc.addr=0.0.0.0 \
                 --rpc.port=8547 \
-                --p2p.disable \
                 --rpc.enable-admin \
+                --p2p.listen.ip=0.0.0.0 \
+                --p2p.listen.tcp=9003 \
                 --p2p.sequencer.key=$${SEQUENCER_KEY#0x} \
                 --l1=$(L1_RPC) \
                 --l1.rpckind=any \
@@ -42,8 +43,8 @@ spec:
                   key: L1_RPC
             - name: SEQUENCER_KEY
               valueFrom:
-                configMapKeyRef:
-                  name: env-cm
+                secretKeyRef:
+                  name: env-secret
                   key: SEQUENCER_KEY
           image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:v1.4.2
           livenessProbe:
@@ -57,18 +58,26 @@ spec:
           name: op-node
           ports:
             - containerPort: 8547
-              hostPort: 8547
+              protocol: TCP
+            - containerPort: 9003
               protocol: TCP
           volumeMounts:
             - mountPath: /data
-              name: op-node-pvc
+              name: op-node-volume
             - mountPath: /genesis
               name: genesis-pvc
-      restartPolicy: Always
+              readOnly: true
       volumes:
-        - name: op-node-pvc
-          persistentVolumeClaim:
-            claimName: op-node-pvc
         - name: genesis-pvc
           persistentVolumeClaim:
             claimName: genesis-pvc
+            readOnly: true
+  volumeClaimTemplates:
+  - metadata:
+      name: op-node-volume
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 100Mi

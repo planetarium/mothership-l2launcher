@@ -31,19 +31,23 @@ spec:
                   key: L1_RPC
             - name: PROPOSER_KEY
               valueFrom:
-                configMapKeyRef:
-                  name: env-cm
+                secretKeyRef:
+                  name: env-secret
                   key: PROPOSER_KEY
           command:
             - sh
             - -c
           image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-proposer:v1.4.2
           name: op-proposer
+          ports:
+            - containerPort: 8560
+              protocol: TCP
           volumeMounts:
             - mountPath: /genesis
               name: genesis-pvc
-      restartPolicy: Always
+              readOnly: true
       volumes:
         - name: genesis-pvc
           persistentVolumeClaim:
             claimName: genesis-pvc
+            readOnly: true

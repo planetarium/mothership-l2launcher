@@ -1,5 +1,5 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: op-geth
   namespace: l2launcher
@@ -7,7 +7,7 @@ spec:
   selector:
     matchLabels:
       name: op-geth
-  replicas: 1
+  replicas: 2
   template:
     metadata:
       labels:
@@ -54,7 +54,7 @@ spec:
           name: genesis-init-predeploy
           volumeMounts:
             - mountPath: /data
-              name: op-geth-pvc
+              name: op-geth-volume
             - mountPath: /genesis
               name: genesis-pvc
             - mountPath: /genesis/predeploy.json
@@ -102,7 +102,7 @@ spec:
               protocol: TCP
           volumeMounts:
             - mountPath: /data
-              name: op-geth-pvc
+              name: op-geth-volume
             - mountPath: /genesis
               name: genesis-pvc
               readOnly: true
@@ -110,9 +110,15 @@ spec:
         - name: genesis-pvc
           persistentVolumeClaim:
             claimName: genesis-pvc
-        - name: op-geth-pvc
-          persistentVolumeClaim:
-            claimName: op-geth-pvc
         - name: predeploy-json-cm
           configMap:
             name: predeploy-json-cm
+  volumeClaimTemplates:
+  - metadata:
+      name: op-geth-volume
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 100Mi

@@ -6,6 +6,7 @@ metadata:
 spec:
   selector:
     name: op-geth
+  type: LoadBalancer
   ports:
     - protocol: TCP
       name: rpc
