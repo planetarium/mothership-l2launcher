@@ -27,3 +27,6 @@ spec:
     - protocol: TCP
       name: op-node-p2p
       port: 9003
+    - protocol: UDP
+      name: op-node-p2p-udp
+      port: 9003

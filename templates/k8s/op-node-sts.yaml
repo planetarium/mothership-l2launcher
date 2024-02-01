@@ -8,7 +8,7 @@ spec:
     matchLabels:
       name: op-node
   serviceName: op-node
-  replicas: 2
+  replicas: 3
   template:
     metadata:
       labels:
@@ -115,11 +115,10 @@ spec:
           args:
             - |
               op-node \
+                --l1=$(L1_RPC) \
+                --l1.rpckind=any \
                 --l2=http://localhost:8551 \
                 --l2.jwt-secret=/genesis/jwt.txt \
-                --sequencer.enabled \
-                --sequencer.l1-confs=3 \
-                --verifier.l1-confs=3 \
                 --rollup.config=/genesis/rollup.json \
                 --rpc.addr=0.0.0.0 \
                 --rpc.port=8547 \
@@ -127,10 +126,15 @@ spec:
                 --p2p.listen.ip=0.0.0.0 \
                 --p2p.listen.tcp=9003 \
                 --p2p.sequencer.key=$${SEQUENCER_KEY#0x} \
-                --l1=$(L1_RPC) \
-                --l1.rpckind=any \
+                --sequencer.enabled=$$([[ $K8S_NODE_NAME = "op-node-0" ]] && echo "true" || echo "false")
+                --sequencer.l1-confs=3 \
+                --verifier.l1-confs=3 \
                 --log.level=debug
           env:
+            - name: K8S_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
             - name: L1_RPC
               valueFrom:
                 configMapKeyRef:
@@ -146,6 +150,8 @@ spec:
               protocol: TCP
             - containerPort: 9003
               protocol: TCP
+            - containerPort: 9003
+              protocol: UDP
           volumeMounts:
             - mountPath: /data
               name: op-node-volume
