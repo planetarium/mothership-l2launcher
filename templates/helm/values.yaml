@@ -1,0 +1,30 @@
+nodes:
+  replicas: 3
+  opGeth:
+    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-geth:v1.101305.0
+    port:
+      rpc: 18545
+      wsrpc: 18546
+      authrpc: 18551
+  opNode:
+    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:v1.4.2
+    port:
+      rpc: 18547
+      p2p: 19003
+  genesisDeployer:
+    image: ghcr.io/planetarium/mothership-l2launcher-genesis-deployer:latest
+  genesisInitPredeploy:
+    image: ghcr.io/planetarium/mothership-l2launcher-genesis-init-predeploy:latest
+
+opBatcher:
+  image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-batcher:v1.4.2
+  port:
+    rpc: 18548
+
+opProposer:
+  image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-proposer:v1.4.2
+  port:
+    rpc: 18560
+
+blockscout:
+  port: 5000

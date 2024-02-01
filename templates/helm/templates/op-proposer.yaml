@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: op-proposer
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: op-proposer
+  template:
+    metadata:
+      labels:
+        name: op-proposer
+    spec:
+      containers:
+        - name: op-proposer
+          image: {{ .Values.opProposer.image }}
+          command:
+            - sh
+            - -c
+          args:
+            - |
+              op-proposer \
+                --private-key=$(PROPOSER_KEY) \
+                --l1-eth-rpc=$(L1_RPC) \
+                --rollup-rpc=http://op-node:{{ .Values.nodes.opNode.port.rpc }} \
+                --rpc.port={{ .Values.opProposer.port.rpc }} \
+                --l2oo-address=$(cat /genesis/L2OutputOracleProxyAddress) \
+                --poll-interval=12s
+          env:
+            - name: L1_RPC
+              valueFrom:
+                configMapKeyRef:
+                  name: env-cm
+                  key: L1_RPC
+            - name: PROPOSER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: env-secret
+                  key: PROPOSER_KEY
+          ports:
+            - containerPort: {{ .Values.opProposer.port.rpc }}
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /genesis
+              name: genesis-pvc
+              readOnly: true
+      volumes:
+        - name: genesis-pvc
+          persistentVolumeClaim:
+            claimName: genesis-pvc
+            readOnly: true
