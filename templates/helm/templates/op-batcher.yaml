@@ -24,8 +24,8 @@ spec:
               op-batcher \
                 --private-key=$(BATCHER_KEY) \
                 --l1-eth-rpc=$(L1_RPC) \
-                --l2-eth-rpc=http://op-node:{{ .Values.nodes.opGeth.port.rpc }} \
-                --rollup-rpc=http://op-node:{{ .Values.nodes.opNode.port.rpc }} \
+                --l2-eth-rpc=http://sequencer:{{ .Values.sequencer.opGeth.port.rpc }} \
+                --rollup-rpc=http://sequencer:{{ .Values.sequencer.opNode.port.rpc }} \
                 --rpc.port={{ .Values.opBatcher.port.rpc }} \
                 --rpc.addr=0.0.0.0 \
                 --rpc.enable-admin \

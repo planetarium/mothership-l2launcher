@@ -1,30 +1,44 @@
 nodes:
-  replicas: 3
+  replicas: 1
   opGeth:
-    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-geth:v1.101305.0
-    port:
-      rpc: 18545
-      wsrpc: 18546
-      authrpc: 18551
+    image: &op-geth-image us-docker.pkg.dev/oplabs-tools-artifacts/images/op-geth:v1.101305.0
+    port: &op-geth-port
+      rpc: 8545
+      wsrpc: 8546
+      authrpc: 8551
   opNode:
-    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:v1.4.2
-    port:
-      rpc: 18547
-      p2p: 19003
+    image: &op-node-image us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:v1.4.2
+    port: &op-node-port
+      rpc: 8547
+      p2p: 9222
   genesisDeployer:
-    image: ghcr.io/planetarium/mothership-l2launcher-genesis-deployer:latest
+    image: &genesis-deployer-image ghcr.io/planetarium/mothership-l2launcher-genesis-deployer:latest
   genesisInitPredeploy:
-    image: ghcr.io/planetarium/mothership-l2launcher-genesis-init-predeploy:latest
+    image: &genesis-init-predeploy-image ghcr.io/planetarium/mothership-l2launcher-genesis-init-predeploy:latest
+
+sequencer:
+  opGeth:
+    image: *op-geth-image
+    port:
+      <<: *op-geth-port
+  opNode:
+    image: *op-node-image
+    port:
+      <<: *op-node-port
+  genesisDeployer:
+    image: *genesis-deployer-image
+  genesisInitPredeploy:
+    image: *genesis-init-predeploy-image
 
 opBatcher:
   image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-batcher:v1.4.2
   port:
-    rpc: 18548
+    rpc: 8548
 
 opProposer:
   image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-proposer:v1.4.2
   port:
-    rpc: 18560
+    rpc: 8560
 
 blockscout:
   port: 5000

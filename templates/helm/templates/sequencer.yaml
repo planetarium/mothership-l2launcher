@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: op-node
+  name: sequencer
   namespace: {{ .Release.Namespace }}
 spec:
   selector:
     matchLabels:
-      name: op-node
-  replicas: {{ .Values.nodes.replicas }}
+      name: sequencer
+  replicas: 1
   template:
     metadata:
       labels:
-        name: op-node
+        name: sequencer
     spec:
       initContainers:
         - name: genesis-deployer
-          image: {{ .Values.nodes.genesisDeployer.image }}
+          image: {{ .Values.sequencer.genesisDeployer.image }}
           env:
             - name: L1_RPC
               valueFrom:
@@ -51,7 +51,7 @@ spec:
             - mountPath: /data
               name: genesis-pvc
         - name: genesis-init-predeploy
-          image: {{ .Values.nodes.genesisInitPredeploy.image }}
+          image: {{ .Values.sequencer.genesisInitPredeploy.image }}
           volumeMounts:
             - mountPath: /data
               name: op-geth-volume
@@ -61,23 +61,45 @@ spec:
               name: predeploy-json-cm
               subPath: predeploy.json
               readOnly: true
+        - name: op-node-libp2p-multiaddr
+          image: {{ .Values.sequencer.opNode.image }}
+          command:
+            - sh
+            - -c
+          args:
+            - |
+              test -e /data/p2p_priv || op-node p2p genkey > /data/p2p_priv; \
+              echo "/ip4/$K8S_POD_IP/tcp/$P2P_PORT/p2p/$(op-node p2p priv2id < /data/p2p_priv)" \
+              > /genesis/sequencer_multiaddr
+          env:
+            - name: K8S_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: P2P_PORT
+              value: "{{ .Values.sequencer.opNode.port.p2p }}"
+          volumeMounts:
+            - mountPath: /data
+              name: op-node-volume
+            - mountPath: /genesis
+              name: genesis-pvc
       containers:
         - name: op-geth
-          image: {{ .Values.nodes.opGeth.image }}
+          image: {{ .Values.sequencer.opGeth.image }}
           args:
             - --datadir=/data
             - --http
-            - --http.port={{ .Values.nodes.opGeth.port.rpc }}
+            - --http.port={{ .Values.sequencer.opGeth.port.rpc }}
             - --http.addr=0.0.0.0
             - --http.vhosts=*
             - --http.corsdomain=*
             - --http.api=web3,debug,eth,txpool,net,engine
             - --ws
-            - --ws.port={{ .Values.nodes.opGeth.port.wsrpc }}
+            - --ws.port={{ .Values.sequencer.opGeth.port.wsrpc }}
             - --ws.addr=0.0.0.0
             - --ws.origins=*
             - --ws.api=debug,eth,txpool,net,engine
-            - --authrpc.port={{ .Values.nodes.opGeth.port.authrpc }}
+            - --authrpc.port={{ .Values.sequencer.opGeth.port.authrpc }}
             - --authrpc.addr=0.0.0.0
             - --authrpc.vhosts=*
             - --authrpc.jwtsecret=/genesis/jwt.txt
@@ -87,11 +109,11 @@ spec:
             - --maxpeers=0
             - --rollup.disabletxpoolgossip=true
           ports:
-            - containerPort: {{ .Values.nodes.opGeth.port.rpc }}
+            - containerPort: {{ .Values.sequencer.opGeth.port.rpc }}
               protocol: TCP
-            - containerPort: {{ .Values.nodes.opGeth.port.wsrpc }}
+            - containerPort: {{ .Values.sequencer.opGeth.port.wsrpc }}
               protocol: TCP
-            - containerPort: {{ .Values.nodes.opGeth.port.authrpc }}
+            - containerPort: {{ .Values.sequencer.opGeth.port.authrpc }}
               protocol: TCP
           volumeMounts:
             - mountPath: /data
@@ -105,10 +127,10 @@ spec:
                 - nc
                 - -z
                 - localhost
-                - "{{ .Values.nodes.opGeth.port.rpc }}"
+                - "{{ .Values.sequencer.opGeth.port.rpc }}"
             periodSeconds: 5
         - name: op-node
-          image: {{ .Values.nodes.opNode.image }}
+          image: {{ .Values.sequencer.opNode.image }}
           command:
             - sh
             - -c
@@ -117,24 +139,21 @@ spec:
               op-node \
                 --l1=$(L1_RPC) \
                 --l1.rpckind=any \
-                --l2=http://localhost:{{ .Values.nodes.opGeth.port.authrpc }} \
+                --l2=http://localhost:{{ .Values.sequencer.opGeth.port.authrpc }} \
                 --l2.jwt-secret=/genesis/jwt.txt \
                 --rollup.config=/genesis/rollup.json \
                 --rpc.addr=0.0.0.0 \
-                --rpc.port={{ .Values.nodes.opNode.port.rpc }} \
+                --rpc.port={{ .Values.sequencer.opNode.port.rpc }} \
                 --rpc.enable-admin \
+                --p2p.priv.path=/data/p2p_priv \
                 --p2p.listen.ip=0.0.0.0 \
-                --p2p.listen.tcp={{ .Values.nodes.opNode.port.p2p }} \
+                --p2p.listen.tcp={{ .Values.sequencer.opNode.port.p2p }} \
                 --p2p.sequencer.key=$${SEQUENCER_KEY#0x} \
-                --sequencer.enabled=$$([[ $K8S_NODE_NAME = "op-node-0" ]] && echo "true" || echo "false")
+                --sequencer.enabled=true \
                 --sequencer.l1-confs=3 \
                 --verifier.l1-confs=3 \
                 --log.level=debug
           env:
-            - name: K8S_NODE_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
             - name: L1_RPC
               valueFrom:
                 configMapKeyRef:
@@ -146,11 +165,11 @@ spec:
                   name: env-secret
                   key: SEQUENCER_KEY
           ports:
-            - containerPort: {{ .Values.nodes.opNode.port.rpc }}
+            - containerPort: {{ .Values.sequencer.opNode.port.rpc }}
               protocol: TCP
-            - containerPort: {{ .Values.nodes.opNode.port.p2p }}
+            - containerPort: {{ .Values.sequencer.opNode.port.p2p }}
               protocol: TCP
-            - containerPort: {{ .Values.nodes.opNode.port.p2p }}
+            - containerPort: {{ .Values.sequencer.opNode.port.p2p }}
               protocol: UDP
           volumeMounts:
             - mountPath: /data
@@ -164,7 +183,7 @@ spec:
                 - nc
                 - -z
                 - localhost
-                - "{{ .Values.nodes.opNode.port.rpc }}"
+                - "{{ .Values.sequencer.opNode.port.rpc }}"
             periodSeconds: 5
       volumes:
         - name: genesis-pvc
@@ -196,32 +215,32 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: op-node
+  name: sequencer
   namespace: {{ .Release.Namespace }}
 spec:
   selector:
-    name: op-node
-  type: LoadBalancer
+    name: sequencer
+  # type: LoadBalancer
   ports:
     - protocol: TCP
       name: op-geth-rpc
-      port: {{ .Values.nodes.opGeth.port.rpc }}
-      targetPort: {{ .Values.nodes.opGeth.port.rpc }}
+      port: {{ .Values.sequencer.opGeth.port.rpc }}
+      targetPort: {{ .Values.sequencer.opGeth.port.rpc }}
     - protocol: TCP
       name: op-geth-wsrpc
-      port: {{ .Values.nodes.opGeth.port.wsrpc }}
-      targetPort: {{ .Values.nodes.opGeth.port.wsrpc }}
+      port: {{ .Values.sequencer.opGeth.port.wsrpc }}
+      targetPort: {{ .Values.sequencer.opGeth.port.wsrpc }}
     - protocol: TCP
       name: op-geth-authrpc
-      port: {{ .Values.nodes.opGeth.port.authrpc }}
-      targetPort: {{ .Values.nodes.opGeth.port.authrpc }}
+      port: {{ .Values.sequencer.opGeth.port.authrpc }}
+      targetPort: {{ .Values.sequencer.opGeth.port.authrpc }}
     - protocol: TCP
       name: op-node-rpc
-      port: {{ .Values.nodes.opNode.port.rpc }}
-      targetPort: {{ .Values.nodes.opNode.port.rpc }}
+      port: {{ .Values.sequencer.opNode.port.rpc }}
+      targetPort: {{ .Values.sequencer.opNode.port.rpc }}
     - protocol: TCP
       name: op-node-p2p
-      port: {{ .Values.nodes.opNode.port.p2p }}
+      port: {{ .Values.sequencer.opNode.port.p2p }}
     - protocol: UDP
       name: op-node-p2p-udp
-      port: {{ .Values.nodes.opNode.port.p2p }}
+      port: {{ .Values.sequencer.opNode.port.p2p }}

@@ -1,0 +1,183 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: node
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      name: node
+  replicas: {{ .Values.nodes.replicas }}
+  template:
+    metadata:
+      labels:
+        name: node
+    spec:
+      initContainers:
+        - name: genesis-init
+          image: {{ .Values.nodes.opGeth.image }}
+          args:
+            - init
+            - --datadir=/data
+            - /genesis/genesis.json
+          volumeMounts:
+            - mountPath: /data
+              name: op-geth-volume
+            - mountPath: /genesis
+              name: genesis-pvc
+              readOnly: true
+      containers:
+        - name: op-geth
+          image: {{ .Values.nodes.opGeth.image }}
+          args:
+            - --datadir=/data
+            - --http
+            - --http.port={{ .Values.nodes.opGeth.port.rpc }}
+            - --http.addr=0.0.0.0
+            - --http.vhosts=*
+            - --http.corsdomain=*
+            - --http.api=web3,debug,eth,txpool,net,engine
+            - --ws
+            - --ws.port={{ .Values.nodes.opGeth.port.wsrpc }}
+            - --ws.addr=0.0.0.0
+            - --ws.origins=*
+            - --ws.api=debug,eth,txpool,net,engine
+            - --authrpc.port={{ .Values.nodes.opGeth.port.authrpc }}
+            - --authrpc.addr=0.0.0.0
+            - --authrpc.vhosts=*
+            - --authrpc.jwtsecret=/genesis/jwt.txt
+            - --syncmode=full
+            - --gcmode=archive
+            - --nodiscover
+            - --maxpeers=0
+            - --rollup.disabletxpoolgossip=true
+          ports:
+            - containerPort: {{ .Values.nodes.opGeth.port.rpc }}
+              protocol: TCP
+            - containerPort: {{ .Values.nodes.opGeth.port.wsrpc }}
+              protocol: TCP
+            - containerPort: {{ .Values.nodes.opGeth.port.authrpc }}
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /data
+              name: op-geth-volume
+            - mountPath: /genesis
+              name: genesis-pvc
+              readOnly: true
+          livenessProbe:
+            exec:
+              command:
+                - nc
+                - -z
+                - localhost
+                - "{{ .Values.nodes.opGeth.port.rpc }}"
+            periodSeconds: 5
+        - name: op-node
+          image: {{ .Values.nodes.opNode.image }}
+          command:
+            - sh
+            - -c
+          args:
+            - |
+              op-node \
+                --l1=$(L1_RPC) \
+                --l1.rpckind=any \
+                --l2=http://localhost:{{ .Values.nodes.opGeth.port.authrpc }} \
+                --l2.jwt-secret=/genesis/jwt.txt \
+                --rollup.config=/genesis/rollup.json \
+                --rpc.addr=0.0.0.0 \
+                --rpc.port={{ .Values.nodes.opNode.port.rpc }} \
+                --rpc.enable-admin \
+                --p2p.static="$(cat /genesis/sequencer_multiaddr)" \
+                --p2p.listen.ip=0.0.0.0 \
+                --p2p.listen.tcp={{ .Values.nodes.opNode.port.p2p }} \
+                --sequencer.enabled=false \
+                --verifier.l1-confs=3 \
+                --log.level=debug
+          env:
+            - name: L1_RPC
+              valueFrom:
+                configMapKeyRef:
+                  name: env-cm
+                  key: L1_RPC
+          ports:
+            - containerPort: {{ .Values.nodes.opNode.port.rpc }}
+              protocol: TCP
+            - containerPort: {{ .Values.nodes.opNode.port.p2p }}
+              protocol: TCP
+            - containerPort: {{ .Values.nodes.opNode.port.p2p }}
+              protocol: UDP
+          volumeMounts:
+            - mountPath: /data
+              name: op-node-volume
+            - mountPath: /genesis
+              name: genesis-pvc
+              readOnly: true
+          livenessProbe:
+            exec:
+              command:
+                - nc
+                - -z
+                - localhost
+                - "{{ .Values.nodes.opNode.port.rpc }}"
+            periodSeconds: 5
+      volumes:
+        - name: genesis-pvc
+          persistentVolumeClaim:
+            claimName: genesis-pvc
+            readOnly: true
+        - name: predeploy-json-cm
+          configMap:
+            name: predeploy-json-cm
+  volumeClaimTemplates:
+  - metadata:
+      name: op-geth-volume
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 100Mi
+  - metadata:
+      name: op-node-volume
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 100Mi
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: node
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    name: node
+  type: LoadBalancer
+  ports:
+    - protocol: TCP
+      name: op-geth-rpc
+      port: {{ .Values.nodes.opGeth.port.rpc }}
+      targetPort: {{ .Values.nodes.opGeth.port.rpc }}
+    - protocol: TCP
+      name: op-geth-wsrpc
+      port: {{ .Values.nodes.opGeth.port.wsrpc }}
+      targetPort: {{ .Values.nodes.opGeth.port.wsrpc }}
+    - protocol: TCP
+      name: op-geth-authrpc
+      port: {{ .Values.nodes.opGeth.port.authrpc }}
+      targetPort: {{ .Values.nodes.opGeth.port.authrpc }}
+    - protocol: TCP
+      name: op-node-rpc
+      port: {{ .Values.nodes.opNode.port.rpc }}
+      targetPort: {{ .Values.nodes.opNode.port.rpc }}
+    - protocol: TCP
+      name: op-node-p2p
+      port: {{ .Values.nodes.opNode.port.p2p }}
+    - protocol: UDP
+      name: op-node-p2p-udp
+      port: {{ .Values.nodes.opNode.port.p2p }}
