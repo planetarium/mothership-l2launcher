@@ -37,7 +37,7 @@ spec:
             - name: PROPOSER_KEY
               valueFrom:
                 secretKeyRef:
-                  name: env-secret
+                  name: private-keys
                   key: PROPOSER_KEY
           ports:
             - containerPort: {{ .Values.opProposer.port.rpc }}

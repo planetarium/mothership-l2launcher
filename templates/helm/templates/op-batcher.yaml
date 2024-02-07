@@ -44,7 +44,7 @@ spec:
             - name: BATCHER_KEY
               valueFrom:
                 secretKeyRef:
-                  name: env-secret
+                  name: private-keys
                   key: BATCHER_KEY
           ports:
             - containerPort: {{ .Values.opBatcher.port.rpc }}

@@ -30,22 +30,22 @@ spec:
             - name: ADMIN_KEY
               valueFrom:
                 secretKeyRef:
-                  name: env-secret
+                  name: private-keys
                   key: ADMIN_KEY
             - name: BATCHER_KEY
               valueFrom:
                 secretKeyRef:
-                  name: env-secret
+                  name: private-keys
                   key: BATCHER_KEY
             - name: PROPOSER_KEY
               valueFrom:
                 secretKeyRef:
-                  name: env-secret
+                  name: private-keys
                   key: PROPOSER_KEY
             - name: SEQUENCER_KEY
               valueFrom:
                 secretKeyRef:
-                  name: env-secret
+                  name: private-keys
                   key: SEQUENCER_KEY
           volumeMounts:
             - mountPath: /data
@@ -162,7 +162,7 @@ spec:
             - name: SEQUENCER_KEY
               valueFrom:
                 secretKeyRef:
-                  name: env-secret
+                  name: private-keys
                   key: SEQUENCER_KEY
           ports:
             - containerPort: {{ .Values.sequencer.opNode.port.rpc }}
