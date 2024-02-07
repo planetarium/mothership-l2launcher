@@ -1,5 +1,4 @@
 apiVersion: v2
-name: l2launcher-helm
+name: l2launcher
 type: application
 version: 0.1.0
-appVersion: "1.16.0"

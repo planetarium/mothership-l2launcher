@@ -1,3 +1,6 @@
+externalSecret:
+  enabled: false
+
 nodes:
   replicas: 1
   opGeth:
