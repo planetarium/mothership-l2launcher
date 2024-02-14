@@ -1,5 +1,15 @@
+global: {}
+
 externalSecret:
   enabled: false
+
+genesis:
+  volume:
+    storage: 100Mi
+  genesisDeployer:
+    image: &genesis-deployer-image ghcr.io/planetarium/mothership-l2launcher-genesis-deployer:latest
+  genesisInitPredeploy:
+    image: &genesis-init-predeploy-image ghcr.io/planetarium/mothership-l2launcher-genesis-init-predeploy:latest
 
 nodes:
   replicas: 1
@@ -9,25 +19,29 @@ nodes:
       rpc: 8545
       wsrpc: 8546
       authrpc: 8551
+    volume: &op-geth-volume
+      storage: 100Gi
   opNode:
     image: &op-node-image us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:v1.4.2
     port: &op-node-port
       rpc: 8547
       p2p: 9222
-  genesisDeployer:
-    image: &genesis-deployer-image ghcr.io/planetarium/mothership-l2launcher-genesis-deployer:latest
-  genesisInitPredeploy:
-    image: &genesis-init-predeploy-image ghcr.io/planetarium/mothership-l2launcher-genesis-init-predeploy:latest
+    volume: &op-node-volume
+      storage: 100Mi
 
 sequencer:
   opGeth:
     image: *op-geth-image
     port:
       <<: *op-geth-port
+    volume:
+      <<: *op-geth-volume
   opNode:
     image: *op-node-image
     port:
       <<: *op-node-port
+    volume:
+      <<: *op-node-volume
   genesisDeployer:
     image: *genesis-deployer-image
   genesisInitPredeploy:
@@ -45,3 +59,5 @@ opProposer:
 
 blockscout:
   port: 5000
+  db:
+    storage: 10Gi

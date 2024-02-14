@@ -213,7 +213,11 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 100Mi
+      storage: {{ .Values.blockscout.db.storage }}
+  {{- if .Values.global.storageClassName }}
+  storageClassName: {{ .Values.global.storageClassName }}
+  {{ end }}
+  volumeMode: Filesystem
 
 ---
 

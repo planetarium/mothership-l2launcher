@@ -200,7 +200,11 @@ spec:
         - ReadWriteOnce
       resources:
         requests:
-          storage: 100Mi
+          storage: {{ .Values.sequencer.opGeth.volume.storage }}
+      {{ if .Values.global.storageClassName }}
+      storageClassName: {{ .Values.global.storageClassName }}
+      {{ end }}
+      volumeMode: Filesystem
   - metadata:
       name: op-node-volume
     spec:
@@ -208,7 +212,11 @@ spec:
         - ReadWriteOnce
       resources:
         requests:
-          storage: 100Mi
+          storage: {{ .Values.sequencer.opNode.volume.storage }}
+      {{- if .Values.global.storageClassName }}
+      storageClassName: {{ .Values.global.storageClassName }}
+      {{ end }}
+      volumeMode: Filesystem
 
 ---
 
