@@ -1,20 +1,18 @@
-global: {}
-
 externalSecret:
   enabled: false
 
 genesis:
-  volume:
+  volume: &genesis-volume
     storage: 100Mi
   genesisDeployer:
     image: &genesis-deployer-image ghcr.io/planetarium/mothership-l2launcher-genesis-deployer:latest
   genesisInitPredeploy:
     image: &genesis-init-predeploy-image ghcr.io/planetarium/mothership-l2launcher-genesis-init-predeploy:latest
 
-nodes:
+node:
   replicas: 1
   opGeth:
-    image: &op-geth-image us-docker.pkg.dev/oplabs-tools-artifacts/images/op-geth:v1.101305.0
+    image: &op-geth-image us-docker.pkg.dev/oplabs-tools-artifacts/images/op-geth:v1.101308.0
     port: &op-geth-port
       rpc: 8545
       wsrpc: 8546
@@ -22,7 +20,7 @@ nodes:
     volume: &op-geth-volume
       storage: 100Gi
   opNode:
-    image: &op-node-image us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:v1.4.2
+    image: &op-node-image us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:v1.5.1
     port: &op-node-port
       rpc: 8547
       p2p: 9222
@@ -30,6 +28,7 @@ nodes:
       storage: 100Mi
 
 sequencer:
+  replicas: 0
   opGeth:
     image: *op-geth-image
     port:
@@ -42,18 +41,16 @@ sequencer:
       <<: *op-node-port
     volume:
       <<: *op-node-volume
-  genesisDeployer:
-    image: *genesis-deployer-image
-  genesisInitPredeploy:
-    image: *genesis-init-predeploy-image
 
 opBatcher:
-  image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-batcher:v1.4.2
+  replicas: 0
+  image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-batcher:v1.5.1
   port:
     rpc: 8548
 
 opProposer:
-  image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-proposer:v1.4.2
+  replicas: 0
+  image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-proposer:v1.5.1
   port:
     rpc: 8560
 

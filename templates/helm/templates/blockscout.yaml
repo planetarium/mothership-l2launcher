@@ -1,5 +1,5 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: blockscout
   namespace: {{ .Release.Namespace }}
@@ -35,7 +35,7 @@ spec:
               value: base
             - name: CHAIN_ID
             - name: CHAIN_SPEC_PATH
-              value: /genesis.json
+              value: {{ .Values.genesis.source }}/genesis.json
             - name: CHECKSUM_ADDRESS_HASHES
               value: "true"
             - name: CHECKSUM_FUNCTION
@@ -61,9 +61,9 @@ spec:
             - name: EMISSION_FORMAT
               value: DEFAULT
             - name: ETHEREUM_JSONRPC_HTTP_URL
-              value: http://sequencer:{{ .Values.sequencer.opGeth.port.rpc }}/
+              value: http://node:{{ .Values.node.opGeth.port.rpc }}/
             - name: ETHEREUM_JSONRPC_TRACE_URL
-              value: http://sequencer:{{ .Values.sequencer.opGeth.port.rpc }}/
+              value: http://node:{{ .Values.node.opGeth.port.rpc }}/
             - name: ETHEREUM_JSONRPC_VARIANT
               value: geth
             - name: EXTERNAL_APPS
@@ -135,15 +135,6 @@ spec:
           ports:
             - containerPort: {{ .Values.blockscout.port }}
               protocol: TCP
-          volumeMounts:
-            - mountPath: /genesis.json
-              name: genesis-pvc
-              readOnly: true
-      volumes:
-        - name: genesis-pvc
-          persistentVolumeClaim:
-            claimName: genesis-pvc
-            readOnly: true
 
 ---
 
@@ -164,7 +155,7 @@ spec:
 ---
 
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: blockscout-postgres
   namespace: {{ .Release.Namespace }}
@@ -179,45 +170,37 @@ spec:
         name: blockscout-postgres
     spec:
       containers:
-        - args:
-            - postgres
-            - -c
-            - max_connections=200
+        - name: blockscout-postgres
+          image: postgres:14
           env:
-            - name: POSTGRES_HOST_AUTH_METHOD
-              value: trust
             - name: POSTGRES_USER
               value: postgres
-          image: postgres:14
-          name: blockscout-postgres
+            - name: POSTGRES_HOST_AUTH_METHOD
+              value: trust
           ports:
             - containerPort: 5432
               protocol: TCP
           volumeMounts:
-            - mountPath: /var/lib/postgresql/data
-              name: blockscout-postgres-pvc
+            - name: blockscout-postgres-volume
+              mountPath: /var/lib/postgresql/data
+              subPath: data
       volumes:
-        - name: blockscout-postgres-pvc
+        - name: blockscout-postgres-volume
           persistentVolumeClaim:
-            claimName: blockscout-postgres-pvc
-
----
-
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: blockscout-postgres-pvc
-  namespace: {{ .Release.Namespace }}
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: {{ .Values.blockscout.db.storage }}
-  {{- if .Values.global.storageClassName }}
-  storageClassName: {{ .Values.global.storageClassName }}
-  {{ end }}
-  volumeMode: Filesystem
+            claimName: blockscout-postgres-volume
+  volumeClaimTemplates:
+  - metadata:
+      name: blockscout-postgres-volume
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: {{ .Values.blockscout.db.storage }}
+      {{- if .Values.storageClassName }}
+      storageClassName: {{ .Values.storageClassName }}
+      {{- end }}
+      volumeMode: Filesystem
 
 ---
 

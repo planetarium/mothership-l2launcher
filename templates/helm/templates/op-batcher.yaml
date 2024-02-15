@@ -1,5 +1,5 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: op-batcher
   namespace: {{ .Release.Namespace }}
@@ -7,7 +7,7 @@ spec:
   selector:
     matchLabels:
       name: op-batcher
-  replicas: 1
+  replicas: {{ .Values.opBatcher.replicas }}
   template:
     metadata:
       labels:
@@ -24,8 +24,8 @@ spec:
               op-batcher \
                 --private-key=$(BATCHER_KEY) \
                 --l1-eth-rpc=$(L1_RPC) \
-                --l2-eth-rpc=http://sequencer:{{ .Values.sequencer.opGeth.port.rpc }} \
-                --rollup-rpc=http://sequencer:{{ .Values.sequencer.opNode.port.rpc }} \
+                --l2-eth-rpc=http://node:{{ .Values.node.opGeth.port.rpc }} \
+                --rollup-rpc=http://node:{{ .Values.node.opNode.port.rpc }} \
                 --rpc.port={{ .Values.opBatcher.port.rpc }} \
                 --rpc.addr=0.0.0.0 \
                 --rpc.enable-admin \

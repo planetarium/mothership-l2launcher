@@ -1,10 +1,10 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: op-proposer
   namespace: {{ .Release.Namespace }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.opProposer.replicas }}
   selector:
     matchLabels:
       name: op-proposer
@@ -13,6 +13,22 @@ spec:
       labels:
         name: op-proposer
     spec:
+      initContainers:
+        - name: fetch-genesis
+          image: curlimages/curl
+          command: ["sh", "-c"]
+          args:
+            - curl -L --remote-name-all $GENESIS_SOURCE/L2OutputOracleProxyAddress
+          workingDir: /genesis
+          env:
+            - name: GENESIS_SOURCE
+              value: "{{ .Values.genesis.source }}"
+          volumeMounts:
+            - mountPath: /genesis
+              name: genesis-volume
+          securityContext:
+            runAsUser: 0
+            runAsNonRoot: false
       containers:
         - name: op-proposer
           image: {{ .Values.opProposer.image }}
@@ -24,7 +40,7 @@ spec:
               op-proposer \
                 --private-key=$(PROPOSER_KEY) \
                 --l1-eth-rpc=$(L1_RPC) \
-                --rollup-rpc=http://sequencer:{{ .Values.sequencer.opNode.port.rpc }} \
+                --rollup-rpc=http://node:{{ .Values.node.opNode.port.rpc }} \
                 --rpc.port={{ .Values.opProposer.port.rpc }} \
                 --l2oo-address=$(cat /genesis/L2OutputOracleProxyAddress) \
                 --poll-interval=12s
@@ -44,10 +60,22 @@ spec:
               protocol: TCP
           volumeMounts:
             - mountPath: /genesis
-              name: genesis-pvc
+              name: genesis-volume
               readOnly: true
       volumes:
-        - name: genesis-pvc
+        - name: genesis-volume
           persistentVolumeClaim:
-            claimName: genesis-pvc
-            readOnly: true
+            claimName: genesis-volume
+  volumeClaimTemplates:
+  - metadata:
+      name: genesis-volume
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: {{ .Values.genesis.volume.storage }}
+      {{- if .Values.storageClassName }}
+      storageClassName: {{ .Values.storageClassName }}
+      {{- end }}
+      volumeMode: Filesystem

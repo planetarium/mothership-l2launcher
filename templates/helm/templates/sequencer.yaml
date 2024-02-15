@@ -7,15 +7,31 @@ spec:
   selector:
     matchLabels:
       name: sequencer
-  replicas: 1
+  replicas: {{ .Values.sequencer.replicas }}
   template:
     metadata:
       labels:
         name: sequencer
     spec:
       initContainers:
+        {{- if .Values.genesis.source }}
+        - name: fetch-genesis
+          image: curlimages/curl
+          command: ["sh", "-c"]
+          args:
+            - |
+              curl -L --remote-name-all $GENESIS_SOURCE/{genesis.json,rollup.json} ; \
+              hexdump -vn32 -e'4/4 "%08x"' /dev/urandom > /genesis/jwt.txt
+          workingDir: /genesis
+          env:
+            - name: GENESIS_SOURCE
+              value: "{{ .Values.genesis.source }}"
+          volumeMounts:
+            - mountPath: /genesis
+              name: genesis-volume
+        {{- else }}
         - name: genesis-deployer
-          image: {{ .Values.sequencer.genesisDeployer.image }}
+          image: {{ .Values.genesis.genesisDeployer.image }}
           env:
             - name: L1_RPC
               valueFrom:
@@ -49,18 +65,19 @@ spec:
                   key: SEQUENCER_KEY
           volumeMounts:
             - mountPath: /data
-              name: genesis-pvc
+              name: genesis-volume
         - name: genesis-init-predeploy
           image: {{ .Values.sequencer.genesisInitPredeploy.image }}
           volumeMounts:
             - mountPath: /data
               name: op-geth-volume
             - mountPath: /genesis
-              name: genesis-pvc
+              name: genesis-volume
             - mountPath: /genesis/predeploy.json
               name: predeploy-json-cm
               subPath: predeploy.json
               readOnly: true
+        {{- end }}
         - name: op-node-libp2p-multiaddr
           image: {{ .Values.sequencer.opNode.image }}
           command:
@@ -82,7 +99,7 @@ spec:
             - mountPath: /data
               name: op-node-volume
             - mountPath: /genesis
-              name: genesis-pvc
+              name: genesis-volume
       containers:
         - name: op-geth
           image: {{ .Values.sequencer.opGeth.image }}
@@ -119,7 +136,7 @@ spec:
             - mountPath: /data
               name: op-geth-volume
             - mountPath: /genesis
-              name: genesis-pvc
+              name: genesis-volume
               readOnly: true
           livenessProbe:
             exec:
@@ -175,7 +192,7 @@ spec:
             - mountPath: /data
               name: op-node-volume
             - mountPath: /genesis
-              name: genesis-pvc
+              name: genesis-volume
               readOnly: true
           livenessProbe:
             exec:
@@ -186,13 +203,25 @@ spec:
                 - "{{ .Values.sequencer.opNode.port.rpc }}"
             periodSeconds: 5
       volumes:
-        - name: genesis-pvc
+        - name: genesis-volume
           persistentVolumeClaim:
-            claimName: genesis-pvc
+            claimName: genesis-volume
         - name: predeploy-json-cm
           configMap:
             name: predeploy-json-cm
   volumeClaimTemplates:
+  - metadata:
+      name: genesis-volume
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: {{ .Values.genesis.volume.storage }}
+      {{- if .Values.storageClassName }}
+      storageClassName: {{ .Values.storageClassName }}
+      {{- end }}
+      volumeMode: Filesystem
   - metadata:
       name: op-geth-volume
     spec:
@@ -201,9 +230,9 @@ spec:
       resources:
         requests:
           storage: {{ .Values.sequencer.opGeth.volume.storage }}
-      {{ if .Values.global.storageClassName }}
-      storageClassName: {{ .Values.global.storageClassName }}
-      {{ end }}
+      {{ if .Values.storageClassName }}
+      storageClassName: {{ .Values.storageClassName }}
+      {{- end }}
       volumeMode: Filesystem
   - metadata:
       name: op-node-volume
@@ -213,9 +242,9 @@ spec:
       resources:
         requests:
           storage: {{ .Values.sequencer.opNode.volume.storage }}
-      {{- if .Values.global.storageClassName }}
-      storageClassName: {{ .Values.global.storageClassName }}
-      {{ end }}
+      {{- if .Values.storageClassName }}
+      storageClassName: {{ .Values.storageClassName }}
+      {{- end }}
       volumeMode: Filesystem
 
 ---
