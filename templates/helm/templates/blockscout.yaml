@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: blockscout
-          image: blockscout/blockscout
+          image: blockscout/blockscout:6.1.0
           args:
             - sh
             - -c
