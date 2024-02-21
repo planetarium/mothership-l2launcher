@@ -11,6 +11,7 @@ genesis:
 
 node:
   replicas: 1
+  loadBalancerExternal: false
   opGeth:
     image: &op-geth-image us-docker.pkg.dev/oplabs-tools-artifacts/images/op-geth:v1.101308.0
     port: &op-geth-port
@@ -56,5 +57,6 @@ opProposer:
 
 blockscout:
   port: 5000
+  loadBalancerExternal: false
   db:
     storage: 10Gi

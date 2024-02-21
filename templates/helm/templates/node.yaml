@@ -171,6 +171,11 @@ kind: Service
 metadata:
   name: node
   namespace: {{ .Release.Namespace }}
+  annotations:
+    {{- if .Values.node.loadBalancerExternal }}
+    service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+    service.beta.kubernetes.io/aws-load-balancer-type: external
+    {{- end }}
 spec:
   selector:
     name: node

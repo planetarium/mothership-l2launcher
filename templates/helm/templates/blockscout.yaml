@@ -143,6 +143,11 @@ kind: Service
 metadata:
   name: blockscout
   namespace: {{ .Release.Namespace }}
+  annotations:
+    {{- if .Values.blockscout.loadBalancerExternal }}
+    service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+    service.beta.kubernetes.io/aws-load-balancer-type: external
+    {{- end }}
 spec:
   selector:
     name: blockscout
