@@ -19,8 +19,9 @@ spec:
           command: ["sh", "-c"]
           args:
             - |
+              test -e genesis.json && test -e rollup.json && exit 0 ; \
               curl -L --remote-name-all $GENESIS_SOURCE/{genesis.json,rollup.json} ; \
-              hexdump -vn32 -e'4/4 "%08x"' /dev/urandom > /genesis/jwt.txt
+              hexdump -vn32 -e'4/4 "%08x"' /dev/urandom > jwt.txt
           workingDir: /genesis
           env:
             - name: GENESIS_SOURCE
@@ -31,6 +32,44 @@ spec:
           securityContext:
             runAsUser: 0
             runAsNonRoot: false
+        {{- if .Values.genesis.createSnapshot }}
+        - name: create-snapshot
+          image: alpine
+          command: ["sh", "-c"]
+          args:
+            - |
+              apk add zstd ; \
+              tar cvf - chaindata -C /data/geth | zstd - -f -o /data/snapshot.tar.zst
+          env:
+            - name: SNAPSHOT
+              value: "{{ .Values.genesis.snapshot }}"
+          volumeMounts:
+            - mountPath: /data
+              name: op-geth-volume
+          securityContext:
+            runAsUser: 0
+            runAsNonRoot: false
+        {{- end }}
+        {{- if .Values.genesis.snapshot }}
+        - name: fetch-snapshot
+          image: curlimages/curl
+          command: ["sh", "-c"]
+          args:
+            - |
+              apk add zstd ; \
+              curl -L -o /data/snapshot.tar.zst.tmp $SNAPSHOT ; \
+              mv -f /data/snapshot.tar.zst.tmp /data/snapshot.tar.zst ; \
+              zstd -d /data/snapshot.tar.zst --stdout | tar xvf - -C /data/geth
+          env:
+            - name: SNAPSHOT
+              value: "{{ .Values.genesis.snapshot }}"
+          volumeMounts:
+            - mountPath: /data
+              name: op-geth-volume
+          securityContext:
+            runAsUser: 0
+            runAsNonRoot: false
+        {{- end }}
         - name: genesis-init
           image: {{ .Values.node.opGeth.image }}
           args:
@@ -42,6 +81,7 @@ spec:
               name: op-geth-volume
             - mountPath: /genesis
               name: genesis-volume
+              readOnly: true
       containers:
         - name: op-geth
           image: {{ .Values.node.opGeth.image }}
