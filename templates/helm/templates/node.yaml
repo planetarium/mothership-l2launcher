@@ -59,6 +59,7 @@ spec:
               apk add zstd ; \
               curl -L -o /data/snapshot.tar.zst.tmp $SNAPSHOT ; \
               mv -f /data/snapshot.tar.zst.tmp /data/snapshot.tar.zst ; \
+              rm -rf /data/geth/chaindata ; \
               zstd -d /data/snapshot.tar.zst --stdout | tar xvf - -C /data/geth
           env:
             - name: SNAPSHOT
@@ -69,7 +70,7 @@ spec:
           securityContext:
             runAsUser: 0
             runAsNonRoot: false
-        {{- end }}
+        {{- else }}
         - name: genesis-init
           image: {{ .Values.node.opGeth.image }}
           args:
@@ -82,6 +83,7 @@ spec:
             - mountPath: /genesis
               name: genesis-volume
               readOnly: true
+        {{- end }}
       containers:
         - name: op-geth
           image: {{ .Values.node.opGeth.image }}
