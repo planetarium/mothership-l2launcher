@@ -61,6 +61,7 @@ spec:
               apk add zstd ; \
               curl -L -o /data/snapshot.tar.zst.tmp $SNAPSHOT ; \
               mv -f /data/snapshot.tar.zst.tmp /data/snapshot.tar.zst ; \
+              mkdir -p /data/geth ; \
               rm -rf /data/geth/chaindata ; \
               zstd -d /data/snapshot.tar.zst --stdout | tar xvf - -C /data/geth
           env:
