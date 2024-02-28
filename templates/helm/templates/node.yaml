@@ -41,7 +41,7 @@ spec:
               apk add zstd aws-cli ; \
               TIME=`date -u +%Y-%m-%dT%H:%MZ` ; \
               tar cvf - chaindata -C /data/geth | zstd - -f -o /data/snapshot-$TIME.tar.zst ; \
-              aws s3 cp /data/snapshot-$TIME.tar.zst s3://$S3_SNAPSHOT_PATH/snapshot-$TIME.tar.zst
+              aws s3 cp /data/snapshot-$TIME.tar.zst s3://$S3_SNAPSHOT_PATH/snapshot-$TIME.tar.zst --acl public-read
           env:
             - name: S3_SNAPSHOT_PATH
               value: "{{ .Values.genesis.s3SnapshotPath }}"
