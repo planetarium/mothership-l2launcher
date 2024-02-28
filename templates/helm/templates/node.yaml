@@ -38,11 +38,13 @@ spec:
           command: ["sh", "-c"]
           args:
             - |
-              apk add zstd ; \
-              tar cvf - chaindata -C /data/geth | zstd - -f -o /data/snapshot.tar.zst
+              apk add zstd aws-cli ; \
+              TIME=`date -u +%Y-%m-%dT%H:%MZ` ; \
+              tar cvf - chaindata -C /data/geth | zstd - -f -o /data/snapshot-$TIME.tar.zst ; \
+              aws s3 cp /data/snapshot-$TIME.tar.zst s3://$S3_SNAPSHOT_PATH/snapshot-$TIME.tar.zst
           env:
-            - name: SNAPSHOT
-              value: "{{ .Values.genesis.snapshot }}"
+            - name: S3_SNAPSHOT_PATH
+              value: "{{ .Values.genesis.s3SnapshotPath }}"
           volumeMounts:
             - mountPath: /data
               name: op-geth-volume
