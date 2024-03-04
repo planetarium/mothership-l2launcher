@@ -39,7 +39,7 @@ spec:
           args:
             - |
               apk add zstd aws-cli ; \
-              TIME=`date -u +%Y-%m-%dT%H:%MZ` ; \
+              TIME=`date -u +%Y%m%dT%H%M%SZ` ; \
               tar cvf - chaindata -C /data/geth | zstd - -f -o /data/snapshot-$TIME.tar.zst ; \
               aws s3 cp /data/snapshot-$TIME.tar.zst s3://$S3_SNAPSHOT_PATH/snapshot-$TIME.tar.zst --acl public-read
           env:
@@ -107,10 +107,12 @@ spec:
             - --authrpc.addr=0.0.0.0
             - --authrpc.vhosts=*
             - --authrpc.jwtsecret=/genesis/jwt.txt
-            - --syncmode=full
+            - --syncmode=snap
             - --gcmode=archive
             - --nodiscover
             - --maxpeers=0
+            - --bootnodes=enode://78a0a5e0c9f70ca0bdadd85f77db941ac42e0d9f6b69b1e4e614ec5ab8e500ce5265ddde47733bf119d4dcb905e1604a005d16f026e2e2b0cfcfe90d4afef880@ssh.holesky.tests.mothership-pla.net:30303
+            - --rollup.sequencerhttp=http://ssh.holesky.tests.mothership-pla.net:8547
             - --rollup.disabletxpoolgossip=true
           ports:
             - containerPort: {{ .Values.node.opGeth.port.rpc }}
@@ -142,6 +144,7 @@ spec:
             - |
               op-node \
                 --l1=$(L1_RPC) \
+                --l1.beacon=$(L1_BEACON_RPC) \
                 --l1.rpckind=any \
                 --l2=http://localhost:{{ .Values.node.opGeth.port.authrpc }} \
                 --l2.jwt-secret=/genesis/jwt.txt \
@@ -151,6 +154,7 @@ spec:
                 --rpc.enable-admin \
                 --p2p.listen.ip=0.0.0.0 \
                 --p2p.listen.tcp={{ .Values.node.opNode.port.p2p }} \
+                --syncmode=execution-layer
                 --sequencer.enabled=false \
                 --verifier.l1-confs=3 \
                 --log.level=debug
@@ -160,6 +164,11 @@ spec:
                 configMapKeyRef:
                   name: env-cm
                   key: L1_RPC
+            - name: L1_BEACON_RPC
+              valueFrom:
+                configMapKeyRef:
+                  name: env-cm
+                  key: L1_BEACON_RPC
           ports:
             - containerPort: {{ .Values.node.opNode.port.rpc }}
               protocol: TCP
