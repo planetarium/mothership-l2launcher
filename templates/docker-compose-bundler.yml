@@ -1,6 +1,6 @@
   stackup-bundler:
     container_name: stackup-bundler
-    image: ghcr.io/planetarium/mothership-l2launcher-stackup-bundler:latest
+    image: stackupwallet/stackup-bundler:latest
     ports:
       - 4337:4337/tcp
     depends_on:
