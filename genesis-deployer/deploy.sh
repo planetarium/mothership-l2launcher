@@ -29,15 +29,14 @@ cat deploy-config/${DEPLOYMENT_CONTEXT}.json
 
 mkdir -p deployments/${DEPLOYMENT_CONTEXT}
 forge script scripts/Deploy.s.sol:Deploy --private-key ${ADMIN_KEY} --broadcast --rpc-url ${L1_RPC_URL}
-forge script scripts/Deploy.s.sol:Deploy --sig 'sync()' --private-key ${ADMIN_KEY} --broadcast --rpc-url ${L1_RPC_URL}
 
-cat deployments/${DEPLOYMENT_CONTEXT}/L2OutputOracleProxy.json \
-  | jq -r .address \
+cat deployments/${DEPLOYMENT_CONTEXT}/.deploy \
+  | jq -r .L2OutputOracleProxy \
   > /data/L2OutputOracleProxyAddress
 
 op-node genesis l2 \
   --deploy-config deploy-config/${DEPLOYMENT_CONTEXT}.json \
-  --deployment-dir deployments/${DEPLOYMENT_CONTEXT} \
+  --l1-deployments deployments/${DEPLOYMENT_CONTEXT}/.deploy \
+  --l1-rpc ${L1_RPC_URL} \
   --outfile.l2 /data/genesis.json \
-  --outfile.rollup /data/rollup.json \
-  --l1-rpc ${L1_RPC_URL}
+  --outfile.rollup /data/rollup.json
