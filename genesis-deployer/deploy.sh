@@ -38,5 +38,8 @@ op-node genesis l2 \
   --deploy-config deploy-config/${DEPLOYMENT_CONTEXT}.json \
   --l1-deployments deployments/${DEPLOYMENT_CONTEXT}/.deploy \
   --l1-rpc ${L1_RPC_URL} \
-  --outfile.l2 /data/genesis.json \
+  --outfile.l2 /data/genesis.json.out \
   --outfile.rollup /data/rollup.json
+
+cat /data/genesis.json.out | jq ".config.fjordTime=0" > /data/genesis.json
+rm -f /data/genesis.json.out

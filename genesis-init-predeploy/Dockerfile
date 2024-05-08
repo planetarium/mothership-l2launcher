@@ -1,4 +1,4 @@
-ARG OP_GETH_VERSION="v1.101308.2"
+ARG OP_GETH_VERSION="v1.101311.1-rc.1"
 
 FROM us-docker.pkg.dev/oplabs-tools-artifacts/images/op-geth:${OP_GETH_VERSION} as op-geth
 
