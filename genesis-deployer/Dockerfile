@@ -1,5 +1,5 @@
 ARG OPTIMISM_CONTRACTS_HEAD="op-contracts/v1.3.0"
-ARG OP_NODE_VERSION="v1.7.1"
+ARG OP_NODE_VERSION="v1.7.5"
 
 FROM us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:${OP_NODE_VERSION} as op-node
 
