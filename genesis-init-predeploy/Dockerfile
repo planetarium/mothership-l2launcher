@@ -1,6 +1,4 @@
-ARG OP_GETH_VERSION="v1.101315.0"
-
-FROM us-docker.pkg.dev/oplabs-tools-artifacts/images/op-geth:${OP_GETH_VERSION} as op-geth
+FROM ghcr.io/planetarium/op-geth:latest as op-geth
 
 FROM buildpack-deps:scm as foundry
 ARG TARGETARCH
