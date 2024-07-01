@@ -112,6 +112,9 @@ await Deno.writeTextFile("out/predeploy.json", await fetchTemplate("templates/pr
 await Deno.writeTextFile("out/docker-compose.yml", dockerComposeYml);
 console.log("out/docker-compose.yml copied.");
 
+await Deno.writeTextFile("out/proxyd.toml", await fetchTemplate("templates/proxyd.toml"));
+console.log("out/proxyd.toml copied.");
+
 const dotenv = Object.entries(env)
   .filter(([k]) => envKeys.includes(k as typeof envKeys[number]))
   .map(([k, v]) => `${k}=${v}`)

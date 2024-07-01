@@ -1,4 +1,4 @@
-FROM ghcr.io/planetarium/op-geth:latest as op-geth
+FROM stackupwallet/op-geth:v1.101315.2 as op-geth
 
 FROM buildpack-deps:scm as foundry
 ARG TARGETARCH
