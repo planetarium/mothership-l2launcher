@@ -7,6 +7,7 @@
       - blockscout-smart-contract-verifier
       - blockscout-visualizer
       - op-geth
+      - proxyd
     volumes:
       - ./data/blockscout/logs/:/app/logs/
       - ./data/genesis:/genesis:ro
@@ -19,8 +20,8 @@
       SUBNETWORK: L2 CHAIN ${L2_CHAIN_ID}
       # LOGO: /images/blockscout_logo.svg
       ETHEREUM_JSONRPC_VARIANT: geth
-      ETHEREUM_JSONRPC_HTTP_URL: http://op-geth:8545/
-      ETHEREUM_JSONRPC_TRACE_URL: http://op-geth:8545/
+      ETHEREUM_JSONRPC_HTTP_URL: http://proxyd:8080/
+      ETHEREUM_JSONRPC_TRACE_URL: http://proxyd:8080/
       DATABASE_URL: postgresql://postgres:@blockscout-postgres:5432/blockscout?ssl=false
       # ETHEREUM_JSONRPC_TRANSPORT: http
       # ETHEREUM_JSONRPC_DISABLE_ARCHIVE_BALANCES: false

@@ -24,20 +24,23 @@ max_degraded_latency_threshold = "10s"
 max_error_rate_threshold = 0.3
 
 [backends]
-[backends.geth]
+[backends.node-1]
 rpc_url = "http://op-geth:8545"
-ws_url = "http://op-geth:8546"
-max_rps = 3
-max_ws_conns = 1
+max_rps = 0
+consensus_receipts_target = "eth_getBlockReceipts"
+
+[backends.node-2]
+rpc_url = "http://op-geth:8545"
+max_rps = 0
 consensus_receipts_target = "eth_getBlockReceipts"
 
 [backend_groups]
 [backend_groups.main]
-backends = ["geth"]
+backends = ["node-2", "node-1"]
 consensus_aware = false
 
 [backend_groups.sequencer]
-backends = ["geth"]
+backends = ["node-1"]
 
 [rpc_method_mappings]
 web3_clientVersion = "main"
@@ -55,10 +58,8 @@ eth_getBlockTransactionCountByNumber = "main"
 eth_getUncleCountByBlockHash = "main"
 eth_getUncleCountByBlockNumber = "main"
 eth_getCode = "main"
-eth_sendRawTransaction = "main"
 eth_getBlockByHash = "main"
 eth_getBlockByNumber = "main"
-eth_getTransactionByHash = "main"
 eth_getTransactionByBlockHashAndIndex = "main"
 eth_getTransactionByBlockNumberAndIndex = "main"
 eth_getUncleByBlockHashAndIndex = "main"
@@ -72,11 +73,18 @@ eth_getFilterLogs = "main"
 eth_getLogs = "main"
 eth_estimateGas = "main"
 eth_gasPrice = "main"
+eth_maxPriorityFeePerGas = "main"
 eth_protocolVersion = "main"
 eth_syncing = "main"
 eth_coinbase = "main"
 eth_mining = "main"
 eth_hashrate = "main"
 eth_chainId = "main"
-eth_getBlockReceipts = "sequencer"
+eth_getBlockReceipts = "main"
+debug_traceCall = "main"
+debug_traceTransaction = "main"
+txpool_content = "sequencer"
+eth_sendTransaction = "sequencer"
+eth_sendRawTransaction = "sequencer"
 eth_getTransactionReceipt = "sequencer"
+eth_getTransactionByHash = "sequencer"

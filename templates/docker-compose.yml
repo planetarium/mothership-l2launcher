@@ -27,7 +27,7 @@ services:
 
   op-geth:
     container_name: op-geth
-    image: stackupwallet/op-geth:v1.101315.2
+    image: ghcr.io/planetarium/op-geth:v1.101315.2
     volumes:
       - ./data/op-geth:/data
       - ./data/genesis:/genesis

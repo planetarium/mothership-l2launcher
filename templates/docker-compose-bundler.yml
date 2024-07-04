@@ -6,8 +6,10 @@
     depends_on:
       op-geth:
         condition: service_healthy
+      proxyd:
+        condition: service_started
     environment:
-      ERC4337_BUNDLER_ETH_CLIENT_URL: http://op-geth:8545
+      ERC4337_BUNDLER_ETH_CLIENT_URL: http://proxyd:8080
       ERC4337_BUNDLER_SUPPORTED_ENTRY_POINTS: ${ERC4337_ENTRYPOINT:-0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789}
       ERC4337_BUNDLER_PRIVATE_KEY: ${ERC4337_BUNDLER_KEY}
       ERC4337_BUNDLER_NATIVE_BUNDLER_COLLECTOR_TRACER: bundlerCollectorTracer
